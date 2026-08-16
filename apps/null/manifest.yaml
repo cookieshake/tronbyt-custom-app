@@ -1,0 +1,8 @@
+---
+id: "null"
+name: "NULL"
+summary: Displays the string NULL
+desc: A minimal app that displays the exact string NULL on screen.
+author: cookieshake
+fileName: null.star
+packageName: "null"
