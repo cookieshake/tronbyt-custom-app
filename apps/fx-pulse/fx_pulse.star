@@ -1,13 +1,4 @@
 load("http.star", "http")
-load("images/eur_flag.png", EUR_FLAG = "file")
-load("images/gbp_flag.webp", GBP_FLAG = "file")
-load("images/jpy_flag.webp", JPY_FLAG = "file")
-
-# Official flag images bundled as local assets (from the tronbyt/apps
-# currencyconverter app). Loading them as "file" assets keeps them local so the
-# app does not depend on a remote URL at render time.
-load("images/krw_flag.webp", KRW_FLAG = "file")
-load("images/usd_flag.webp", USD_FLAG = "file")
 load("render.star", "render")
 load("schema.star", "schema")
 
@@ -25,16 +16,17 @@ DEFAULT_QUOTE = "KRW"
 # Fallback text shown when the API fails or the rate is missing.
 FALLBACK_TEXT = "Rate unavailable"
 
-# Flag image assets for the supported currencies. Each is a full flag image
-# (40x30 for the webp flags) that preserves the complete design, including the
-# Korean taegeuk and the four trigrams (건곤감리). Currencies not listed here
-# fall back to their 3-letter code.
-FLAG_ASSETS = {
-    "KRW": KRW_FLAG,
-    "USD": USD_FLAG,
-    "EUR": EUR_FLAG,
-    "JPY": JPY_FLAG,
-    "GBP": GBP_FLAG,
+# Flag emoji for the supported currencies. Pixlet's render.Emoji widget renders
+# a single emoji at a specified height. Note that flag emojis render at their
+# native sprite size (10x10) regardless of the requested height, and different
+# flags have slightly different visual bboxes. Currencies not listed here fall
+# back to their 3-letter code.
+FLAG_EMOJI = {
+    "KRW": "🇰🇷",
+    "USD": "🇺🇸",
+    "EUR": "🇪🇺",
+    "JPY": "🇯🇵",
+    "GBP": "🇬🇧",
 }
 
 # The screen is split exactly in half: header 16 rows, body 16 rows.
@@ -101,16 +93,11 @@ def spacer(width):
     return render.Box(width = width, height = 1)
 
 def flag_widget(code):
-    # Render a fixed-size flag image for known currencies, or fall back to the
-    # 3-letter code for unknown ones. The flag images are 40x30 (2:3 ratio);
-    # render at 16x15 to fill the 16px header while preserving the full design
-    # (taegeuk + trigrams for KRW) from the source asset.
-    if code in FLAG_ASSETS:
-        return render.Image(
-            src = FLAG_ASSETS[code].readall(),
-            width = 16,
-            height = 15,
-        )
+    # Render a flag emoji for known currencies, or fall back to the 3-letter
+    # code for unknown ones. render.Emoji renders the emoji at its native
+    # sprite size (10x10) regardless of the requested height.
+    if code in FLAG_EMOJI:
+        return render.Emoji(emoji = FLAG_EMOJI[code], height = 12)
     return render.Text(code, color = "#ffffff", font = "tom-thumb")
 
 def fetch_rate(base, quote):
