@@ -1,0 +1,9 @@
+---
+id: "weather-pulse"
+name: "Weather Pulse"
+summary: Current weather and forecast
+desc: Fetches current conditions and a 3-day high/low forecast from Open-Meteo for a configurable city. Temperature and wind speed units are configurable. Weather data provided by Open-Meteo.com. https://open-meteo.com/
+author: cookieshake
+recommendedInterval: 60
+fileName: weather_pulse.star
+packageName: "weather-pulse"
