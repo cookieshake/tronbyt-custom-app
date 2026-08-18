@@ -1,0 +1,8 @@
+---
+id: "rss-pulse"
+name: "RSS Pulse"
+summary: Displays the latest RSS items
+desc: Fetches an RSS feed over HTTP and vertically scrolls the titles and descriptions of the latest items. Header, fonts, and colors are configurable.
+author: cookieshake
+fileName: rss_pulse.star
+packageName: "rss-pulse"
