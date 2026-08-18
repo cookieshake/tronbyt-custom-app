@@ -20,49 +20,134 @@ DEFAULT_WIND_UNIT = "ms"
 # Fallback text shown when the API fails or the data is missing/malformed.
 FALLBACK_TEXT = "Weather unavailable"
 
-# Fonts used by the existing fx-pulse app. Only these names are referenced;
-# the full font list is never enumerated.
+# Font used by the existing fx-pulse app. Only this name is referenced; the
+# full font list is never enumerated.
 FONT_SMALL = "tom-thumb"
 
-# 3-column layout. Each column is 20px wide; the Row uses space_between so the
-# three 20px columns (60px) are spread across 64px with 2px gaps between them.
+# 3-column layout. Each column is 20px wide. The outer Row is centered with
+# explicit 1px spacers on the left/right edges and 1px spacers between columns:
+#   1 + 20 + 1 + 20 + 1 + 20 + 1 = 64
+# This fills the full 64px width symmetrically instead of relying on
+# space_between, so the three columns are evenly spaced and centered.
 COL_WIDTH = 20
+EDGE_SPACER = 1
+GAP_SPACER = 1
 
 # Day labels for the three columns. tom-thumb is a 5px pixel font with no
 # Hangul glyphs, so short English labels are used instead of Korean.
 DAY_LABELS = ["TODAY", "TMRW", "2DAY"]
 
-# Short, emoji-free 3-4 char abbreviations for WMO weather codes. Codes not
-# listed here fall back to a generic "???" marker. All fit within a 20px column.
-WEATHER_LABELS = {
-    0: "CLR",
-    1: "CLR",
-    2: "PRT",
-    3: "OVC",
-    45: "FOG",
-    48: "FOG",
-    51: "DRZ",
-    53: "DRZ",
-    55: "DRZ",
-    56: "DRZ",
-    57: "DRZ",
-    61: "RAIN",
-    63: "RAIN",
-    65: "RAIN",
-    66: "RAIN",
-    67: "RAIN",
-    71: "SNOW",
-    73: "SNOW",
-    75: "SNOW",
-    77: "SNOW",
-    80: "SHWR",
-    81: "SHWR",
-    82: "SHWR",
-    85: "SNOW",
-    86: "SNOW",
-    95: "TNR",
-    96: "TNR",
-    99: "TNR",
+# Icon palette.
+SUN = "#ffd700"
+CLOUD = "#cccccc"
+RAIN = "#4a90d9"
+SNOW = "#ffffff"
+LIGHTNING = "#ffd700"
+FOG = "#888888"
+
+# Pixel-art weather icons, each a 12x12 grid. Every row is a list of
+# (width, color) segments summing to 12; a color of None is transparent.
+# Icons are assembled from render.Box/Row/Column primitives (no image files,
+# no emoji, no unicode symbols).
+ICONS = {
+    "sun": [
+        [(4, None), (1, SUN), (7, None)],
+        [(4, None), (1, SUN), (7, None)],
+        [(4, None), (1, SUN), (7, None)],
+        [(2, None), (6, SUN), (4, None)],
+        [(1, None), (8, SUN), (3, None)],
+        [(10, SUN), (2, None)],
+        [(10, SUN), (2, None)],
+        [(1, None), (8, SUN), (3, None)],
+        [(2, None), (6, SUN), (4, None)],
+        [(4, None), (1, SUN), (7, None)],
+        [(4, None), (1, SUN), (7, None)],
+        [(4, None), (1, SUN), (7, None)],
+    ],
+    "partly": [
+        [(3, None), (4, SUN), (5, None)],
+        [(3, None), (4, SUN), (5, None)],
+        [(2, None), (6, SUN), (4, None)],
+        [(1, None), (8, SUN), (3, None)],
+        [(1, None), (8, SUN), (3, None)],
+        [(2, None), (6, SUN), (4, None)],
+        [(12, None)],
+        [(4, None), (4, CLOUD), (4, None)],
+        [(3, None), (6, CLOUD), (3, None)],
+        [(2, None), (8, CLOUD), (2, None)],
+        [(1, None), (10, CLOUD), (1, None)],
+        [(12, CLOUD)],
+    ],
+    "cloud": [
+        [(12, None)],
+        [(12, None)],
+        [(4, None), (4, CLOUD), (4, None)],
+        [(3, None), (6, CLOUD), (3, None)],
+        [(2, None), (8, CLOUD), (2, None)],
+        [(1, None), (10, CLOUD), (1, None)],
+        [(12, CLOUD)],
+        [(12, CLOUD)],
+        [(12, None)],
+        [(12, None)],
+        [(12, None)],
+        [(12, None)],
+    ],
+    "rain": [
+        [(12, None)],
+        [(4, None), (4, CLOUD), (4, None)],
+        [(3, None), (6, CLOUD), (3, None)],
+        [(2, None), (8, CLOUD), (2, None)],
+        [(1, None), (10, CLOUD), (1, None)],
+        [(12, CLOUD)],
+        [(12, CLOUD)],
+        [(12, None)],
+        [(2, None), (2, RAIN), (2, None), (2, RAIN), (2, None), (2, RAIN)],
+        [(2, None), (2, RAIN), (2, None), (2, RAIN), (2, None), (2, RAIN)],
+        [(2, None), (2, RAIN), (2, None), (2, RAIN), (2, None), (2, RAIN)],
+        [(12, None)],
+    ],
+    "snow": [
+        [(12, None)],
+        [(4, None), (4, CLOUD), (4, None)],
+        [(3, None), (6, CLOUD), (3, None)],
+        [(2, None), (8, CLOUD), (2, None)],
+        [(1, None), (10, CLOUD), (1, None)],
+        [(12, CLOUD)],
+        [(12, CLOUD)],
+        [(12, None)],
+        [(2, None), (2, SNOW), (2, None), (2, SNOW), (2, None), (2, SNOW)],
+        [(2, None), (2, SNOW), (2, None), (2, SNOW), (2, None), (2, SNOW)],
+        [(2, None), (2, SNOW), (2, None), (2, SNOW), (2, None), (2, SNOW)],
+        [(12, None)],
+    ],
+    "thunder": [
+        [(12, None)],
+        [(4, None), (4, CLOUD), (4, None)],
+        [(3, None), (6, CLOUD), (3, None)],
+        [(2, None), (8, CLOUD), (2, None)],
+        [(1, None), (10, CLOUD), (1, None)],
+        [(12, CLOUD)],
+        [(12, CLOUD)],
+        [(12, None)],
+        [(5, None), (2, LIGHTNING), (5, None)],
+        [(4, None), (3, LIGHTNING), (5, None)],
+        [(3, None), (4, LIGHTNING), (5, None)],
+        [(2, None), (5, LIGHTNING), (5, None)],
+    ],
+    "fog": [
+        [(12, None)],
+        [(12, None)],
+        [(12, None)],
+        [(2, None), (8, FOG), (2, None)],
+        [(12, None)],
+        [(2, None), (8, FOG), (2, None)],
+        [(12, None)],
+        [(2, None), (8, FOG), (2, None)],
+        [(12, None)],
+        [(2, None), (8, FOG), (2, None)],
+        [(12, None)],
+        [(12, None)],
+    ],
 }
 
 def main(config):
@@ -117,20 +202,30 @@ def layout(data):
             code = today_code
         hi = highs[i] if highs != None and i < len(highs) else None
         lo = lows[i] if lows != None and i < len(lows) else None
-        cells.append(column_cell(DAY_LABELS[i], format_temp(lo), format_temp(hi), weather_label(code)))
+        cells.append(column_cell(DAY_LABELS[i], format_temp(lo), format_temp(hi), icon_widget(ICONS[icon_key(code)])))
 
     if len(cells) == 0:
         return fallback()
 
+    # Build the centered row: 1px edge spacer, then each column separated by a
+    # 1px gap spacer, then a 1px edge spacer. With 3 columns this is exactly
+    # 64px wide and centered.
+    children = [spacer(EDGE_SPACER)]
+    for idx, cell in enumerate(cells):
+        if idx > 0:
+            children.append(spacer(GAP_SPACER))
+        children.append(cell)
+    children.append(spacer(EDGE_SPACER))
+
     return render.Row(
-        main_align = "space_between",
+        main_align = "center",
         cross_align = "center",
-        children = cells,
+        children = children,
     )
 
-def column_cell(day, lo, hi, weather):
+def column_cell(day, lo, hi, icon):
     # One 20px-wide column: day label on top, low/high temp in the middle,
-    # weather abbreviation at the bottom. The degree symbol is omitted because
+    # weather icon at the bottom. The degree symbol is omitted because
     # "12/25°" (23px) does not fit a 20px column; "12/25" (19px) does.
     return render.Box(
         width = COL_WIDTH,
@@ -141,15 +236,53 @@ def column_cell(day, lo, hi, weather):
             children = [
                 render.Text(day, color = "#ffffff", font = FONT_SMALL),
                 render.Text("%s/%s" % (lo, hi), color = "#ffffff", font = FONT_SMALL),
-                render.Text(weather, color = "#aaaaaa", font = FONT_SMALL),
+                icon,
             ],
         ),
     )
 
-def weather_label(code):
+def spacer(width):
+    # A transparent spacer Box to add explicit horizontal breathing room.
+    return render.Box(width = width, height = 1)
+
+def icon_widget(rows):
+    # Assemble a 12x12 pixel-art icon from Box/Row/Column primitives. Each row
+    # is a list of (width, color) segments; None color means transparent.
+    return render.Column(
+        children = [
+            render.Row(children = [
+                seg_box(seg)
+                for seg in row
+            ])
+            for row in rows
+        ],
+    )
+
+def seg_box(seg):
+    if seg[1] == None:
+        return render.Box(width = seg[0], height = 1)
+    return render.Box(width = seg[0], height = 1, color = seg[1])
+
+def icon_key(code):
+    # Map a WMO weather code to one of the pixel-art icon names.
     if code == None:
-        return "???"
-    return WEATHER_LABELS.get(int(code), "???")
+        return "cloud"
+    c = int(code)
+    if c in (0, 1):
+        return "sun"
+    if c == 2:
+        return "partly"
+    if c == 3:
+        return "cloud"
+    if c in (45, 48):
+        return "fog"
+    if c in (51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82):
+        return "rain"
+    if c in (71, 73, 75, 77, 85, 86):
+        return "snow"
+    if c in (95, 96, 99):
+        return "thunder"
+    return "cloud"
 
 def format_temp(value):
     # Round to the nearest integer for display.
