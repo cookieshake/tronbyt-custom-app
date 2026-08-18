@@ -87,11 +87,9 @@ FLAG_PIXELS = {
     ],
 }
 
-# Header occupies the top 11 rows. The header content is 9px tall, so 11px
-# centers it with a 1px margin above and below (verified via pixel analysis).
-# The body uses the remaining 21 rows.
-HEADER_HEIGHT = 11
-BODY_HEIGHT = 21
+# The screen is split exactly in half: header 16 rows, body 16 rows.
+HEADER_HEIGHT = 16
+BODY_HEIGHT = 16
 
 def main(config):
     base = config.get("base", DEFAULT_BASE).upper()
@@ -112,15 +110,19 @@ def main(config):
                         offset_start = 0,
                         offset_end = 0,
                         child = render.Padding(
-                            pad = (0, 1, 0, 0),
+                            pad = (0, 3, 0, 3),
                             child = render.Row(
                                 main_align = "center",
                                 cross_align = "center",
                                 children = [
                                     flag_widget(base),
+                                    spacer(1),
                                     render.Text(base, color = "#ffffff", font = "tom-thumb"),
+                                    spacer(1),
                                     render.Text("→", color = "#ffffff", font = "tom-thumb"),
+                                    spacer(1),
                                     flag_widget(quote),
+                                    spacer(1),
                                     render.Text(quote, color = "#ffffff", font = "tom-thumb"),
                                 ],
                             ),
@@ -135,12 +137,17 @@ def main(config):
                         rate,
                         color = "#ffffff",
                         font = "6x10",
-                        offset = 1,
                     ),
                 ),
             ],
         ),
     )
+
+def spacer(width):
+    # A transparent spacer Box to add horizontal breathing room between
+    # header elements. Transparent (no color) so it doesn't paint over the
+    # header background.
+    return render.Box(width = width, height = 1)
 
 def flag_widget(code):
     # Render a fixed 10x10 pixel-art flag for known currencies, or fall back
