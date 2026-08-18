@@ -16,27 +16,80 @@ DEFAULT_QUOTE = "KRW"
 # Fallback text shown when the API fails or the rate is missing.
 FALLBACK_TEXT = "Rate unavailable"
 
-# Flag emoji for a few common currencies. Pixlet's Text widget renders flag
-# emojis natively (verified against the official docs and a render probe).
-# Currencies not listed here fall back to their 3-letter code.
-FLAGS = {
-    "USD": "🇺🇸",
-    "KRW": "🇰🇷",
-    "EUR": "🇪🇺",
-    "GBP": "🇬🇧",
-    "JPY": "🇯🇵",
-    "CNY": "🇨🇳",
-    "AUD": "🇦🇺",
-    "CAD": "🇨🇦",
-    "CHF": "🇨🇭",
-    "INR": "🇮🇳",
-    "BRL": "🇧🇷",
-    "MXN": "🇲🇽",
+# Fixed-size pixel-art flags for a few common currencies. Pixlet renders emoji
+# flags at their native sprite size (e.g. US 7x5, KR 4x4) regardless of the
+# Text/Emoji height, so they appear different sizes. Drawing each flag as a
+# fixed 10x10 grid of colored Boxes guarantees equal visual size. Currencies
+# not listed here fall back to their 3-letter code.
+
+# 10x10 pixel-art flag rows for the most common currencies. Each entry is a
+# list of 10 rows; each row is a list of (width, color) segments summing to 10.
+FLAG_PIXELS = {
+    "USD": [
+        [(3, "#0a3161"), (7, "#b31942")],
+        [(3, "#0a3161"), (7, "#ffffff")],
+        [(3, "#0a3161"), (7, "#b31942")],
+        [(3, "#0a3161"), (7, "#ffffff")],
+        [(3, "#0a3161"), (7, "#b31942")],
+        [(10, "#ffffff")],
+        [(10, "#b31942")],
+        [(10, "#ffffff")],
+        [(10, "#b31942")],
+        [(10, "#ffffff")],
+    ],
+    "KRW": [
+        [(10, "#ffffff")],
+        [(10, "#ffffff")],
+        [(4, "#ffffff"), (2, "#cd2e3a"), (4, "#ffffff")],
+        [(3, "#ffffff"), (2, "#cd2e3a"), (2, "#0047a0"), (3, "#ffffff")],
+        [(3, "#ffffff"), (1, "#cd2e3a"), (2, "#ffffff"), (1, "#0047a0"), (3, "#ffffff")],
+        [(3, "#ffffff"), (1, "#0047a0"), (2, "#ffffff"), (1, "#cd2e3a"), (3, "#ffffff")],
+        [(3, "#ffffff"), (2, "#0047a0"), (2, "#cd2e3a"), (3, "#ffffff")],
+        [(4, "#ffffff"), (2, "#0047a0"), (4, "#ffffff")],
+        [(10, "#ffffff")],
+        [(10, "#ffffff")],
+    ],
+    "EUR": [
+        [(10, "#003399")],
+        [(10, "#003399")],
+        [(10, "#003399")],
+        [(10, "#ffcc00")],
+        [(10, "#ffcc00")],
+        [(10, "#ffcc00")],
+        [(10, "#ffcc00")],
+        [(10, "#ffcc00")],
+        [(10, "#ffcc00")],
+        [(10, "#ffcc00")],
+    ],
+    "JPY": [
+        [(10, "#ffffff")],
+        [(10, "#ffffff")],
+        [(10, "#ffffff")],
+        [(3, "#ffffff"), (4, "#bc002d"), (3, "#ffffff")],
+        [(3, "#ffffff"), (4, "#bc002d"), (3, "#ffffff")],
+        [(3, "#ffffff"), (4, "#bc002d"), (3, "#ffffff")],
+        [(3, "#ffffff"), (4, "#bc002d"), (3, "#ffffff")],
+        [(10, "#ffffff")],
+        [(10, "#ffffff")],
+        [(10, "#ffffff")],
+    ],
+    "GBP": [
+        [(10, "#012169")],
+        [(10, "#012169")],
+        [(10, "#012169")],
+        [(10, "#012169")],
+        [(10, "#012169")],
+        [(10, "#012169")],
+        [(10, "#012169")],
+        [(10, "#012169")],
+        [(10, "#012169")],
+        [(10, "#012169")],
+    ],
 }
 
-# Header occupies the top 11 rows. Flags render at 10x10 px regardless of font,
-# and the header text is 9px tall, so 11px centers it with a 1px margin above
-# and below (verified via pixel analysis). The body uses the remaining 21 rows.
+# Header occupies the top 11 rows. The header content is 9px tall, so 11px
+# centers it with a 1px margin above and below (verified via pixel analysis).
+# The body uses the remaining 21 rows.
 HEADER_HEIGHT = 11
 BODY_HEIGHT = 21
 
@@ -58,10 +111,16 @@ def main(config):
                         scroll_direction = "horizontal",
                         offset_start = 0,
                         offset_end = 0,
-                        child = render.Text(
-                            "%s %s → %s %s" % (flag_for(base), base, flag_for(quote), quote),
-                            color = "#ffffff",
-                            font = "tom-thumb",
+                        child = render.Row(
+                            main_align = "center",
+                            cross_align = "center",
+                            children = [
+                                flag_widget(base),
+                                render.Text(base, color = "#ffffff", font = "tom-thumb"),
+                                render.Text("→", color = "#ffffff", font = "tom-thumb"),
+                                flag_widget(quote),
+                                render.Text(quote, color = "#ffffff", font = "tom-thumb"),
+                            ],
                         ),
                     ),
                 ),
@@ -79,8 +138,20 @@ def main(config):
         ),
     )
 
-def flag_for(code):
-    return FLAGS.get(code, code)
+def flag_widget(code):
+    # Render a fixed 10x10 pixel-art flag for known currencies, or fall back
+    # to the 3-letter code for unknown ones.
+    if code in FLAG_PIXELS:
+        return render.Column(
+            children = [
+                render.Row(children = [
+                    render.Box(width = seg[0], height = 1, color = seg[1])
+                    for seg in row
+                ])
+                for row in FLAG_PIXELS[code]
+            ],
+        )
+    return render.Text(code, color = "#ffffff", font = "tom-thumb")
 
 def fetch_rate(base, quote):
     # Guard against empty/invalid currency codes.
