@@ -1,7 +1,6 @@
 load("http.star", "http")
 load("render.star", "render")
 load("schema.star", "schema")
-load("time.star", "time")
 
 # Refresh every 60 minutes (matches the recommended render interval).
 CACHE_TTL_SECONDS = 3600
@@ -24,44 +23,46 @@ FALLBACK_TEXT = "Weather unavailable"
 # Fonts used by the existing fx-pulse app. Only these names are referenced;
 # the full font list is never enumerated.
 FONT_SMALL = "tom-thumb"
-FONT_LARGE = "6x10"
 
-# Screen split: header shows location + current conditions, body shows the
-# daily high/low forecast.
-HEADER_HEIGHT = 12
-BODY_HEIGHT = 20
+# 3-column layout. Each column is 20px wide; the Row uses space_between so the
+# three 20px columns (60px) are spread across 64px with 2px gaps between them.
+COL_WIDTH = 20
 
-# Short, emoji-free labels for WMO weather codes. Codes not listed here fall
-# back to a generic "Weather" label.
+# Day labels for the three columns. tom-thumb is a 5px pixel font with no
+# Hangul glyphs, so short English labels are used instead of Korean.
+DAY_LABELS = ["TODAY", "TMRW", "2DAY"]
+
+# Short, emoji-free 3-4 char abbreviations for WMO weather codes. Codes not
+# listed here fall back to a generic "???" marker. All fit within a 20px column.
 WEATHER_LABELS = {
-    0: "Clear",
-    1: "Mainly Clear",
-    2: "Partly Cloudy",
-    3: "Overcast",
-    45: "Fog",
-    48: "Fog",
-    51: "Drizzle",
-    53: "Drizzle",
-    55: "Drizzle",
-    56: "Freezing Drizzle",
-    57: "Freezing Drizzle",
-    61: "Rain",
-    63: "Rain",
-    65: "Rain",
-    66: "Freezing Rain",
-    67: "Freezing Rain",
-    71: "Snow",
-    73: "Snow",
-    75: "Snow",
-    77: "Snow Grains",
-    80: "Showers",
-    81: "Showers",
-    82: "Showers",
-    85: "Snow Showers",
-    86: "Snow Showers",
-    95: "Thunderstorm",
-    96: "Thunderstorm",
-    99: "Thunderstorm",
+    0: "CLR",
+    1: "CLR",
+    2: "PRT",
+    3: "OVC",
+    45: "FOG",
+    48: "FOG",
+    51: "DRZ",
+    53: "DRZ",
+    55: "DRZ",
+    56: "DRZ",
+    57: "DRZ",
+    61: "RAIN",
+    63: "RAIN",
+    65: "RAIN",
+    66: "RAIN",
+    67: "RAIN",
+    71: "SNOW",
+    73: "SNOW",
+    75: "SNOW",
+    77: "SNOW",
+    80: "SHWR",
+    81: "SHWR",
+    82: "SHWR",
+    85: "SNOW",
+    86: "SNOW",
+    95: "TNR",
+    96: "TNR",
+    99: "TNR",
 }
 
 def main(config):
@@ -81,14 +82,7 @@ def main(config):
     if data == None:
         return fallback()
 
-    return render.Root(
-        child = render.Column(
-            children = [
-                header_widget(city, data),
-                body_widget(data),
-            ],
-        ),
-    )
+    return render.Root(child = layout(data))
 
 def fallback():
     return render.Root(
@@ -100,90 +94,62 @@ def fallback():
         ),
     )
 
-def header_widget(city, data):
+def layout(data):
     current = data.get("current")
-    status = weather_label(current.get("weather_code"))
-    temp = format_temp(current.get("temperature_2m"))
-
-    return render.Box(
-        width = 64,
-        height = HEADER_HEIGHT,
-        color = "#333333",
-        child = render.Column(
-            main_align = "space_between",
-            cross_align = "start",
-            children = [
-                render.Row(
-                    main_align = "space_between",
-                    cross_align = "center",
-                    children = [
-                        render.Text(city, color = "#ffffff", font = FONT_SMALL),
-                        render.Text(temp, color = "#ffffff", font = FONT_LARGE),
-                    ],
-                ),
-                render.Text(status, color = "#aaaaaa", font = FONT_SMALL),
-            ],
-        ),
-    )
-
-def body_widget(data):
     daily = data.get("daily")
     codes = daily.get("weather_code")
     highs = daily.get("temperature_2m_max")
     lows = daily.get("temperature_2m_min")
-    precip = daily.get("precipitation_probability_max")
-    dates = daily.get("time")
 
-    rows = []
+    # Today's icon: prefer the current weather code, else today's daily code.
+    today_code = None
+    if current != None:
+        today_code = current.get("weather_code")
+    if today_code == None and codes != None and len(codes) > 0:
+        today_code = codes[0]
+
+    cells = []
     for i in range(0, 3):
-        if i >= len(dates):
+        if codes == None or i >= len(codes):
             break
-        rows.append(day_row(dates[i], codes[i], highs[i], lows[i], precip[i]))
+        code = codes[i]
+        if i == 0 and today_code != None:
+            code = today_code
+        hi = highs[i] if highs != None and i < len(highs) else None
+        lo = lows[i] if lows != None and i < len(lows) else None
+        cells.append(column_cell(DAY_LABELS[i], format_temp(lo), format_temp(hi), weather_label(code)))
 
-    if len(rows) == 0:
-        rows.append(render.Text(FALLBACK_TEXT, color = "#ffffff", font = FONT_SMALL))
-
-    return render.Box(
-        width = 64,
-        height = BODY_HEIGHT,
-        color = "#000000",
-        child = render.Column(
-            main_align = "space_between",
-            cross_align = "start",
-            children = rows,
-        ),
-    )
-
-def day_row(date, code, high, low, precip):
-    weekday = weekday_label(date)
-    label = weather_label(code)
-    hi = format_temp(high)
-    lo = format_temp(low)
-
-    # "Mon 27/22" plus a precip suffix when it is meaningful.
-    text = "%s %s/%s" % (weekday, hi, lo)
-    if precip != None and precip > 0:
-        text = "%s %d%%" % (text, int(precip))
+    if len(cells) == 0:
+        return fallback()
 
     return render.Row(
         main_align = "space_between",
         cross_align = "center",
-        children = [
-            render.Text(text, color = "#ffffff", font = FONT_SMALL),
-            render.Text(label, color = "#aaaaaa", font = FONT_SMALL),
-        ],
+        children = cells,
     )
 
-def weekday_label(date):
-    # daily.time entries are ISO dates like "2026-08-18" in the local timezone
-    # (timezone=auto). Parse and format as a short weekday.
-    t = time.parse_time(date, "2006-01-02")
-    return t.format("Mon")
+def column_cell(day, lo, hi, weather):
+    # One 20px-wide column: day label on top, low/high temp in the middle,
+    # weather abbreviation at the bottom. The degree symbol is omitted because
+    # "12/25°" (23px) does not fit a 20px column; "12/25" (19px) does.
+    return render.Box(
+        width = COL_WIDTH,
+        height = 32,
+        child = render.Column(
+            main_align = "space_between",
+            cross_align = "center",
+            children = [
+                render.Text(day, color = "#ffffff", font = FONT_SMALL),
+                render.Text("%s/%s" % (lo, hi), color = "#ffffff", font = FONT_SMALL),
+                render.Text(weather, color = "#aaaaaa", font = FONT_SMALL),
+            ],
+        ),
+    )
 
 def weather_label(code):
     if code == None:
-        return "Weather"
-    return WEATHER_LABELS.get(int(code), "Weather")
+        return "???"
+    return WEATHER_LABELS.get(int(code), "???")
 
 def format_temp(value):
     # Round to the nearest integer for display.
