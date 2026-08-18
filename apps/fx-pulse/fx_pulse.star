@@ -40,17 +40,22 @@ CODE_FONT = "tb-8"
 HEADER_HEIGHT = 16
 BODY_HEIGHT = 16
 
-# Color of the YTD sparkline drawn behind the rate text. A mid-bright gray that
-# is visible on the black body background but does not overpower the white rate
-# text.
-SPARKLINE_COLOR = "#888888"
+# Color of the YTD sparkline drawn behind the rate text. A dark, low-contrast
+# gray that is visible on the black body background but does not overpower the
+# bright rate text.
+SPARKLINE_COLOR = "#555555"
+
+# Color of the rate text drawn on top of the sparkline. Bright so it stays
+# readable over the graph.
+RATE_COLOR = "#ffffff"
 
 def main(config):
     base = config.get("base", DEFAULT_BASE).upper()
     quote = config.get("quote", DEFAULT_QUOTE).upper()
 
     rate = fetch_rate(base, quote)
-    ytd_data = fetch_ytd(base, quote)
+    now = time.now()
+    ytd_data = fetch_ytd(base, quote, now)
 
     return render.Root(
         child = render.Column(
@@ -91,11 +96,22 @@ def main(config):
                     color = "#000000",
                     child = render.Stack(
                         children = [
-                            sparkline(ytd_data),
-                            render.Text(
-                                rate,
-                                color = "#ffffff",
-                                font = "6x10",
+                            sparkline(ytd_data, now.year),
+                            # Full-width Box centers the opaque panel + rate text
+                            # horizontally in the body.
+                            render.Box(
+                                width = 64,
+                                height = BODY_HEIGHT,
+                                child = render.Box(
+                                    width = 24,
+                                    height = 10,
+                                    color = "#000000",
+                                    child = render.Text(
+                                        rate,
+                                        color = RATE_COLOR,
+                                        font = "6x10",
+                                    ),
+                                ),
                             ),
                         ],
                     ),
@@ -104,17 +120,22 @@ def main(config):
         ),
     )
 
-def sparkline(data):
-    # Draw the YTD rate series as a line plot filling the 16px body. If there
-    # are fewer than 2 points (or the fetch failed), render an empty box so the
-    # rate text still shows.
+def sparkline(data, year):
+    # Draw the YTD rate series as a line plot filling the 16px body. The x-axis
+    # is fixed to the full year: Jan 1 = x 0, Dec 31 = x 365 (or 366 in a leap
+    # year). Data points are placed at their day-of-year position, so today's
+    # data only reaches the elapsed fraction of the year and the future region
+    # stays empty. If there are fewer than 2 points (or the fetch failed),
+    # render an empty box so the rate text still shows.
     if data == None or len(data) < 2:
         return render.Box(width = 64, height = BODY_HEIGHT)
+    last_doy = 365 if is_leap(year) else 364
     return render.Plot(
         data = data,
         width = 64,
         height = BODY_HEIGHT,
         color = SPARKLINE_COLOR,
+        x_lim = (0, last_doy),
         y_lim = (min([d[1] for d in data]), max([d[1] for d in data])),
     )
 
@@ -153,14 +174,15 @@ def fetch_rate(base, quote):
 
     return format_rate(rate)
 
-def fetch_ytd(base, quote):
+def fetch_ytd(base, quote, now):
     # Fetch daily rates from Jan 1 of the current year to today, and return a
-    # list of (index, rate) tuples for the Plot widget. Returns None on any
-    # failure so the caller can fall back to showing just the rate text.
+    # list of (day_of_year, rate) tuples for the Plot widget. The x value is the
+    # day-of-year (0-based) so the plot maps Jan 1 to x=0 and Dec 31 to the last
+    # day of the year. Returns None on any failure so the caller can fall back
+    # to showing just the rate text.
     if base == "" or quote == "":
         return None
 
-    now = time.now()
     start = time.time(year = now.year, month = 1, day = 1)
     end = now
     url = "%s/%s..%s?base=%s&symbols=%s" % (
@@ -180,16 +202,35 @@ def fetch_ytd(base, quote):
     if rates == None:
         return None
 
-    # Build a list of (index, rate) in date order.
+    # Build a list of (day_of_year, rate) in date order. Parse each date string
+    # (YYYY-MM-DD) safely and map it to its 0-based day-of-year. The API may
+    # return the previous trading day (e.g. Dec 31 of the prior year) as the
+    # first date, so skip any date not in the current year.
     points = []
     for date in sorted(rates.keys()):
         r = rates[date].get(quote)
         if r != None:
-            points.append((len(points), r))
+            t = time.parse_time(date, "2006-01-02", "UTC")
+            if t.year != now.year:
+                continue
+            points.append((day_of_year(t.year, t.month, t.day), r))
 
     if len(points) < 2:
         return None
     return points
+
+def day_of_year(year, month, day):
+    # 0-based day-of-year, handling leap years correctly.
+    days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    if is_leap(year):
+        days_in_month[1] = 29
+    doy = 0
+    for m in range(0, month - 1):
+        doy = doy + days_in_month[m]
+    return doy + day - 1
+
+def is_leap(year):
+    return (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0)
 
 def format_rate(rate):
     # Show 2 decimals for most currencies, but KRW/JPY-style rates are large
