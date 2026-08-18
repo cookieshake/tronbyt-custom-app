@@ -35,7 +35,7 @@ GAP_SPACER = 1
 
 # Day labels for the three columns. tom-thumb is a 5px pixel font with no
 # Hangul glyphs, so short English labels are used instead of Korean.
-DAY_LABELS = ["TODAY", "TMRW", "2DAY"]
+DAY_LABELS = ["TODAY", "+1D", "+2D"]
 
 # Dark navy background and high-contrast text colors.
 BG = "#0a0e1a"
@@ -56,9 +56,14 @@ WEATHER_EMOJI = {
 }
 
 # Emoji render height. The emoji sprite is rendered at its native size scaled
-# to this height; 14px keeps it large and readable while leaving room for the
-# day label and low/high temp in each 32px-tall column.
+# to this height; 14px keeps it large and readable.
 EMOJI_HEIGHT = 14
+
+# How many pixels to shift the emoji down within its column slot. The emoji is
+# placed inside a transparent Box that is EMOJI_HEIGHT + EMOJI_OFFSET tall, with
+# a top spacer of EMOJI_OFFSET, so the icon sits 2px lower without clipping at
+# the bottom of the 32px screen or overlapping the low/high temp above it.
+EMOJI_OFFSET = 2
 
 def main(config):
     city = config.get("city", DEFAULT_CITY).strip()
@@ -157,8 +162,22 @@ def spacer(width):
     return render.Box(width = width, height = 1)
 
 def emoji_widget(key):
-    # Render the weather emoji at a fixed height, centered in the column.
-    return render.Emoji(emoji = WEATHER_EMOJI[key], height = EMOJI_HEIGHT)
+    # Render the weather emoji at a fixed height, centered in the column, and
+    # shifted down by EMOJI_OFFSET via a transparent top spacer inside a fixed
+    # slot. The slot is EMOJI_HEIGHT + EMOJI_OFFSET tall so the icon is not
+    # clipped at the bottom of the 32px screen.
+    return render.Box(
+        width = COL_WIDTH,
+        height = EMOJI_HEIGHT + EMOJI_OFFSET,
+        child = render.Column(
+            main_align = "start",
+            cross_align = "center",
+            children = [
+                render.Box(width = 1, height = EMOJI_OFFSET),
+                render.Emoji(emoji = WEATHER_EMOJI[key], height = EMOJI_HEIGHT),
+            ],
+        ),
+    )
 
 def icon_key(code):
     # Map a WMO weather code to one of the emoji keys.
