@@ -34,10 +34,11 @@ FLAGS = {
     "MXN": "🇲🇽",
 }
 
-# Header occupies the top 10 rows (flags render at 10x10 px regardless of font,
-# so 8px would clip them); the body uses the remaining 22 rows.
-HEADER_HEIGHT = 10
-BODY_HEIGHT = 22
+# Header occupies the top 11 rows. Flags render at 10x10 px regardless of font,
+# and the header text is 9px tall, so 11px centers it with a 1px margin above
+# and below (verified via pixel analysis). The body uses the remaining 21 rows.
+HEADER_HEIGHT = 11
+BODY_HEIGHT = 21
 
 def main(config):
     base = config.get("base", DEFAULT_BASE).upper()
