@@ -17,10 +17,10 @@ DEFAULT_QUOTE = "KRW"
 FALLBACK_TEXT = "Rate unavailable"
 
 # Flag emoji for the supported currencies. Pixlet's render.Emoji widget renders
-# a single emoji at a specified height. Note that flag emojis render at their
-# native sprite size (10x10) regardless of the requested height, and different
-# flags have slightly different visual bboxes. Currencies not listed here fall
-# back to their 3-letter code.
+# a single emoji at its native sprite size (10x10) regardless of the requested
+# height, and different flags have slightly different visual bboxes. We use the
+# natural sprite size/ratio (no forced square box). Currencies not listed here
+# fall back to their 3-letter code.
 FLAG_EMOJI = {
     "KRW": "🇰🇷",
     "USD": "🇺🇸",
@@ -28,6 +28,10 @@ FLAG_EMOJI = {
     "JPY": "🇯🇵",
     "GBP": "🇬🇧",
 }
+
+# Font for the currency codes. tb-8 is larger and more readable than tom-thumb
+# while still fitting the 16px header.
+CODE_FONT = "tb-8"
 
 # The screen is split exactly in half: header 16 rows, body 16 rows.
 HEADER_HEIGHT = 16
@@ -60,13 +64,13 @@ def main(config):
                                 children = [
                                     flag_widget(base),
                                     spacer(1),
-                                    render.Text(base, color = "#ffffff", font = "tom-thumb"),
+                                    render.Text(base, color = "#ffffff", font = CODE_FONT),
                                     spacer(1),
-                                    render.Text("→", color = "#ffffff", font = "tom-thumb"),
+                                    render.Text("→", color = "#ffffff", font = CODE_FONT),
                                     spacer(1),
                                     flag_widget(quote),
                                     spacer(1),
-                                    render.Text(quote, color = "#ffffff", font = "tom-thumb"),
+                                    render.Text(quote, color = "#ffffff", font = CODE_FONT),
                                 ],
                             ),
                         ),
@@ -94,11 +98,10 @@ def spacer(width):
 
 def flag_widget(code):
     # Render a flag emoji for known currencies, or fall back to the 3-letter
-    # code for unknown ones. render.Emoji renders the emoji at its native
-    # sprite size (10x10) regardless of the requested height.
+    # code for unknown ones. Uses the emoji's natural sprite size/ratio.
     if code in FLAG_EMOJI:
-        return render.Emoji(emoji = FLAG_EMOJI[code], height = 12)
-    return render.Text(code, color = "#ffffff", font = "tom-thumb")
+        return render.Emoji(emoji = FLAG_EMOJI[code], height = 10)
+    return render.Text(code, color = "#ffffff", font = CODE_FONT)
 
 def fetch_rate(base, quote):
     # Guard against empty/invalid currency codes.
