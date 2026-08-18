@@ -1,4 +1,5 @@
 load("http.star", "http")
+load("re.star", "re")
 load("render.star", "render")
 load("schema.star", "schema")
 load("xpath.star", "xpath")
@@ -100,13 +101,28 @@ def fetch_articles(feed_url, article_count):
         if title == None or title.strip() == "":
             break
         desc = doc.query("//item[%s]/description" % str(i))
-        content = desc.strip() if desc != None else ""
-        articles.append((title.strip(), content))
+        content = escape_html(desc) if desc != None else ""
+        articles.append((escape_html(title), content))
 
     if len(articles) == 0:
         return [(FALLBACK_TEXT, "")]
 
     return articles
+
+def escape_html(text):
+    # The XML parser already decodes the outer XML entities, so a Google News
+    # description arrives here as literal HTML markup (e.g. "<ol><li><a ...>").
+    # render.Text does not interpret HTML, but to be safe we escape the markup
+    # characters so they are displayed as plain text rather than being mistaken
+    # for markup. Escape "&" first so we don't double-escape existing entities.
+    text = text.replace("&", "&amp;")
+    text = text.replace("<", "&lt;")
+    text = text.replace(">", "&gt;")
+    text = text.replace("\"", "&quot;")
+    text = text.replace("'", "&#39;")
+
+    # Collapse runs of whitespace (incl. newlines from markup) into single spaces.
+    return re.sub(r"\s+", " ", text).strip()
 
 def get_schema():
     fonts = [
