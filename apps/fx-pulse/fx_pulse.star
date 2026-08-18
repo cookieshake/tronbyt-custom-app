@@ -34,6 +34,11 @@ FLAGS = {
     "MXN": "🇲🇽",
 }
 
+# Header occupies the top 10 rows (flags render at 10x10 px regardless of font,
+# so 8px would clip them); the body uses the remaining 22 rows.
+HEADER_HEIGHT = 10
+BODY_HEIGHT = 22
+
 def main(config):
     base = config.get("base", DEFAULT_BASE).upper()
     quote = config.get("quote", DEFAULT_QUOTE).upper()
@@ -45,17 +50,23 @@ def main(config):
             children = [
                 render.Box(
                     width = 64,
-                    height = 8,
+                    height = HEADER_HEIGHT,
                     color = "#333333",
-                    child = render.Text(
-                        "%s %s → %s %s" % (flag_for(base), base, flag_for(quote), quote),
-                        color = "#ffffff",
-                        font = "tom-thumb",
+                    child = render.Marquee(
+                        width = 64,
+                        scroll_direction = "horizontal",
+                        offset_start = 0,
+                        offset_end = 0,
+                        child = render.Text(
+                            "%s %s → %s %s" % (flag_for(base), base, flag_for(quote), quote),
+                            color = "#ffffff",
+                            font = "tom-thumb",
+                        ),
                     ),
                 ),
                 render.Box(
                     width = 64,
-                    height = 24,
+                    height = BODY_HEIGHT,
                     color = "#000000",
                     child = render.Text(
                         rate,
