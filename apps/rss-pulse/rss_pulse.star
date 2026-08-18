@@ -24,8 +24,16 @@ DEFAULT_HEADER_BG_COLOR = "#333333"
 DEFAULT_TITLE_COLOR = "#ffffff"
 DEFAULT_CONTENT_COLOR = "#aaaaaa"
 
+# Default body background. The current layout's body area is black (the Root
+# background and the per-article spacer boxes are #000000), so preserve that.
+DEFAULT_BODY_BG_COLOR = "#000000"
+
 # Default number of items to display.
 DEFAULT_ARTICLE_COUNT = "3"
+
+# Whether to show each article's description/content (default preserves the
+# existing title+content behavior).
+DEFAULT_SHOW_DESCRIPTION = True
 
 # Header occupies the top 8 rows; the body scrolls in the remaining 24.
 HEADER_HEIGHT = 8
@@ -37,7 +45,9 @@ def main(config):
     header_font = resolve_font(config.get("header_font"))
     header_color = config.get("header_color", DEFAULT_HEADER_COLOR)
     header_bg_color = config.get("header_bg_color", DEFAULT_HEADER_BG_COLOR)
+    body_bg_color = config.get("body_bg_color", DEFAULT_BODY_BG_COLOR)
     article_count = int(config.get("article_count", DEFAULT_ARTICLE_COUNT))
+    show_description = config.bool("show_description", DEFAULT_SHOW_DESCRIPTION)
     title_font = resolve_font(config.get("title_font"))
     title_color = config.get("title_color", DEFAULT_TITLE_COLOR)
     content_font = resolve_font(config.get("content_font"))
@@ -56,13 +66,18 @@ def main(config):
                     color = header_bg_color,
                     child = render.Text(header_text, color = header_color, font = header_font),
                 ),
-                render.Marquee(
+                render.Box(
+                    width = 64,
                     height = BODY_HEIGHT,
-                    scroll_direction = "vertical",
-                    offset_start = BODY_HEIGHT,
-                    child = render.Column(
-                        main_align = "space_between",
-                        children = render_articles(articles, title_font, title_color, content_font, content_color),
+                    color = body_bg_color,
+                    child = render.Marquee(
+                        height = BODY_HEIGHT,
+                        scroll_direction = "vertical",
+                        offset_start = BODY_HEIGHT,
+                        child = render.Column(
+                            main_align = "space_between",
+                            children = render_articles(articles, show_description, title_font, title_color, content_font, content_color),
+                        ),
                     ),
                 ),
             ],
@@ -74,13 +89,13 @@ def resolve_font(font):
         return DEFAULT_FONT
     return font
 
-def render_articles(articles, title_font, title_color, content_font, content_color):
+def render_articles(articles, show_description, title_font, title_color, content_font, content_color):
     widgets = []
     for article in articles:
         title = article[0]
         content = article[1]
         widgets.append(render.WrappedText(title, color = title_color, font = title_font))
-        if content != "":
+        if show_description and content != "":
             widgets.append(render.WrappedText(content, color = content_color, font = content_font))
         widgets.append(render.Box(width = 64, height = 4, color = "#000000"))
     return widgets
@@ -95,6 +110,15 @@ def fetch_articles(feed_url, article_count):
         return [(FALLBACK_TEXT, "")]
 
     doc = xpath.loads(res.body())
+
+    # Detect the feed type structurally via XPath: an Atom feed has a <feed>
+    # root with <entry> items, while an RSS feed has an <rss>/<channel> root
+    # with <item> items. Prefer this over brittle string matching.
+    if doc.query_node("/feed") != None:
+        return fetch_atom(doc, article_count)
+    return fetch_rss(doc, article_count)
+
+def fetch_rss(doc, article_count):
     articles = []
     for i in range(1, article_count + 1):
         title = doc.query("//item[%s]/title" % str(i))
@@ -103,6 +127,22 @@ def fetch_articles(feed_url, article_count):
         desc = doc.query("//item[%s]/description" % str(i))
         content = to_plain_text(desc) if desc != None else ""
         articles.append((to_plain_text(title), content))
+
+    if len(articles) == 0:
+        return [(FALLBACK_TEXT, "")]
+
+    return articles
+
+def fetch_atom(doc, article_count):
+    articles = []
+    for i in range(1, article_count + 1):
+        title = doc.query("//entry[%s]/title" % str(i))
+        if title == None or title.strip() == "":
+            break
+        content = doc.query("//entry[%s]/content" % str(i))
+        if content == None or content.strip() == "":
+            content = doc.query("//entry[%s]/summary" % str(i))
+        articles.append((to_plain_text(title), to_plain_text(content)))
 
     if len(articles) == 0:
         return [(FALLBACK_TEXT, "")]
@@ -206,6 +246,13 @@ def get_schema():
                 icon = "palette",
                 default = DEFAULT_HEADER_BG_COLOR,
             ),
+            schema.Color(
+                id = "body_bg_color",
+                name = "Body Background",
+                desc = "Background color of the scrolling article area.",
+                icon = "palette",
+                default = DEFAULT_BODY_BG_COLOR,
+            ),
             schema.Dropdown(
                 id = "article_count",
                 name = "Items to Show",
@@ -219,6 +266,13 @@ def get_schema():
                     schema.Option(display = "4", value = "4"),
                     schema.Option(display = "5", value = "5"),
                 ],
+            ),
+            schema.Toggle(
+                id = "show_description",
+                name = "Show Descriptions",
+                desc = "Show each item's description/content below its title.",
+                icon = "toggleOn",
+                default = DEFAULT_SHOW_DESCRIPTION,
             ),
             schema.Dropdown(
                 id = "title_font",
