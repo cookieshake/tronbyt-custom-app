@@ -109,6 +109,7 @@ def main(config):
                         scroll_direction = "horizontal",
                         offset_start = 0,
                         offset_end = 0,
+                        align = "center",
                         child = render.Padding(
                             pad = (0, 3, 0, 3),
                             child = render.Row(
