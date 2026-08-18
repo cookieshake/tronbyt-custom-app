@@ -1,13 +1,16 @@
 load("http.star", "http")
 load("render.star", "render")
 load("schema.star", "schema")
+load("time.star", "time")
 
 # Cache the rate for 10 minutes (matches the recommended render interval).
 CACHE_TTL_SECONDS = 600
 
-# Frankfurter API endpoint. Returns JSON like:
-#   {"amount":1.0,"base":"USD","date":"2026-08-17","rates":{"KRW":1411.91}}
+# Frankfurter API endpoints. Returns JSON like:
+#   latest:  {"amount":1.0,"base":"USD","date":"2026-08-17","rates":{"KRW":1411.91}}
+#   timeseries: {"amount":1.0,"base":"USD","start_date":"...","end_date":"...","rates":{"2026-01-01":{"KRW":...},...}}
 API_URL = "https://api.frankfurter.dev/v1/latest"
+TIMESERIES_URL = "https://api.frankfurter.dev/v1"
 
 # Default base/quote currencies.
 DEFAULT_BASE = "USD"
@@ -37,11 +40,17 @@ CODE_FONT = "tb-8"
 HEADER_HEIGHT = 16
 BODY_HEIGHT = 16
 
+# Color of the YTD sparkline drawn behind the rate text. A mid-bright gray that
+# is visible on the black body background but does not overpower the white rate
+# text.
+SPARKLINE_COLOR = "#888888"
+
 def main(config):
     base = config.get("base", DEFAULT_BASE).upper()
     quote = config.get("quote", DEFAULT_QUOTE).upper()
 
     rate = fetch_rate(base, quote)
+    ytd_data = fetch_ytd(base, quote)
 
     return render.Root(
         child = render.Column(
@@ -80,14 +89,33 @@ def main(config):
                     width = 64,
                     height = BODY_HEIGHT,
                     color = "#000000",
-                    child = render.Text(
-                        rate,
-                        color = "#ffffff",
-                        font = "6x10",
+                    child = render.Stack(
+                        children = [
+                            sparkline(ytd_data),
+                            render.Text(
+                                rate,
+                                color = "#ffffff",
+                                font = "6x10",
+                            ),
+                        ],
                     ),
                 ),
             ],
         ),
+    )
+
+def sparkline(data):
+    # Draw the YTD rate series as a line plot filling the 16px body. If there
+    # are fewer than 2 points (or the fetch failed), render an empty box so the
+    # rate text still shows.
+    if data == None or len(data) < 2:
+        return render.Box(width = 64, height = BODY_HEIGHT)
+    return render.Plot(
+        data = data,
+        width = 64,
+        height = BODY_HEIGHT,
+        color = SPARKLINE_COLOR,
+        y_lim = (min([d[1] for d in data]), max([d[1] for d in data])),
     )
 
 def spacer(width):
@@ -124,6 +152,44 @@ def fetch_rate(base, quote):
         return FALLBACK_TEXT
 
     return format_rate(rate)
+
+def fetch_ytd(base, quote):
+    # Fetch daily rates from Jan 1 of the current year to today, and return a
+    # list of (index, rate) tuples for the Plot widget. Returns None on any
+    # failure so the caller can fall back to showing just the rate text.
+    if base == "" or quote == "":
+        return None
+
+    now = time.now()
+    start = time.time(year = now.year, month = 1, day = 1)
+    end = now
+    url = "%s/%s..%s?base=%s&symbols=%s" % (
+        TIMESERIES_URL,
+        start.format("2006-01-02"),
+        end.format("2006-01-02"),
+        base,
+        quote,
+    )
+
+    res = http.get(url = url, ttl_seconds = CACHE_TTL_SECONDS)
+    if res.status_code != 200:
+        return None
+
+    data = res.json()
+    rates = data.get("rates")
+    if rates == None:
+        return None
+
+    # Build a list of (index, rate) in date order.
+    points = []
+    for date in sorted(rates.keys()):
+        r = rates[date].get(quote)
+        if r != None:
+            points.append((len(points), r))
+
+    if len(points) < 2:
+        return None
+    return points
 
 def format_rate(rate):
     # Show 2 decimals for most currencies, but KRW/JPY-style rates are large
