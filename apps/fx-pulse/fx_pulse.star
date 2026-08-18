@@ -1,4 +1,13 @@
 load("http.star", "http")
+load("images/eur_flag.png", EUR_FLAG = "file")
+load("images/gbp_flag.webp", GBP_FLAG = "file")
+load("images/jpy_flag.webp", JPY_FLAG = "file")
+
+# Official flag images bundled as local assets (from the tronbyt/apps
+# currencyconverter app). Loading them as "file" assets keeps them local so the
+# app does not depend on a remote URL at render time.
+load("images/krw_flag.webp", KRW_FLAG = "file")
+load("images/usd_flag.webp", USD_FLAG = "file")
 load("render.star", "render")
 load("schema.star", "schema")
 
@@ -16,75 +25,16 @@ DEFAULT_QUOTE = "KRW"
 # Fallback text shown when the API fails or the rate is missing.
 FALLBACK_TEXT = "Rate unavailable"
 
-# Fixed-size pixel-art flags for a few common currencies. Pixlet renders emoji
-# flags at their native sprite size (e.g. US 7x5, KR 4x4) regardless of the
-# Text/Emoji height, so they appear different sizes. Drawing each flag as a
-# fixed 10x10 grid of colored Boxes guarantees equal visual size. Currencies
-# not listed here fall back to their 3-letter code.
-
-# 10x10 pixel-art flag rows for the most common currencies. Each entry is a
-# list of 10 rows; each row is a list of (width, color) segments summing to 10.
-FLAG_PIXELS = {
-    "USD": [
-        [(3, "#0a3161"), (7, "#b31942")],
-        [(3, "#0a3161"), (7, "#ffffff")],
-        [(3, "#0a3161"), (7, "#b31942")],
-        [(3, "#0a3161"), (7, "#ffffff")],
-        [(3, "#0a3161"), (7, "#b31942")],
-        [(10, "#ffffff")],
-        [(10, "#b31942")],
-        [(10, "#ffffff")],
-        [(10, "#b31942")],
-        [(10, "#ffffff")],
-    ],
-    "KRW": [
-        [(10, "#ffffff")],
-        [(10, "#ffffff")],
-        [(4, "#ffffff"), (2, "#cd2e3a"), (4, "#ffffff")],
-        [(3, "#ffffff"), (2, "#cd2e3a"), (2, "#0047a0"), (3, "#ffffff")],
-        [(3, "#ffffff"), (1, "#cd2e3a"), (2, "#ffffff"), (1, "#0047a0"), (3, "#ffffff")],
-        [(3, "#ffffff"), (1, "#0047a0"), (2, "#ffffff"), (1, "#cd2e3a"), (3, "#ffffff")],
-        [(3, "#ffffff"), (2, "#0047a0"), (2, "#cd2e3a"), (3, "#ffffff")],
-        [(4, "#ffffff"), (2, "#0047a0"), (4, "#ffffff")],
-        [(10, "#ffffff")],
-        [(10, "#ffffff")],
-    ],
-    "EUR": [
-        [(10, "#003399")],
-        [(10, "#003399")],
-        [(10, "#003399")],
-        [(10, "#ffcc00")],
-        [(10, "#ffcc00")],
-        [(10, "#ffcc00")],
-        [(10, "#ffcc00")],
-        [(10, "#ffcc00")],
-        [(10, "#ffcc00")],
-        [(10, "#ffcc00")],
-    ],
-    "JPY": [
-        [(10, "#ffffff")],
-        [(10, "#ffffff")],
-        [(10, "#ffffff")],
-        [(3, "#ffffff"), (4, "#bc002d"), (3, "#ffffff")],
-        [(3, "#ffffff"), (4, "#bc002d"), (3, "#ffffff")],
-        [(3, "#ffffff"), (4, "#bc002d"), (3, "#ffffff")],
-        [(3, "#ffffff"), (4, "#bc002d"), (3, "#ffffff")],
-        [(10, "#ffffff")],
-        [(10, "#ffffff")],
-        [(10, "#ffffff")],
-    ],
-    "GBP": [
-        [(10, "#012169")],
-        [(10, "#012169")],
-        [(10, "#012169")],
-        [(10, "#012169")],
-        [(10, "#012169")],
-        [(10, "#012169")],
-        [(10, "#012169")],
-        [(10, "#012169")],
-        [(10, "#012169")],
-        [(10, "#012169")],
-    ],
+# Flag image assets for the supported currencies. Each is a full flag image
+# (40x30 for the webp flags) that preserves the complete design, including the
+# Korean taegeuk and the four trigrams (건곤감리). Currencies not listed here
+# fall back to their 3-letter code.
+FLAG_ASSETS = {
+    "KRW": KRW_FLAG,
+    "USD": USD_FLAG,
+    "EUR": EUR_FLAG,
+    "JPY": JPY_FLAG,
+    "GBP": GBP_FLAG,
 }
 
 # The screen is split exactly in half: header 16 rows, body 16 rows.
@@ -111,7 +61,7 @@ def main(config):
                         offset_end = 0,
                         align = "center",
                         child = render.Padding(
-                            pad = (0, 3, 0, 3),
+                            pad = (0, 0, 0, 0),
                             child = render.Row(
                                 main_align = "center",
                                 cross_align = "center",
@@ -151,17 +101,15 @@ def spacer(width):
     return render.Box(width = width, height = 1)
 
 def flag_widget(code):
-    # Render a fixed 10x10 pixel-art flag for known currencies, or fall back
-    # to the 3-letter code for unknown ones.
-    if code in FLAG_PIXELS:
-        return render.Column(
-            children = [
-                render.Row(children = [
-                    render.Box(width = seg[0], height = 1, color = seg[1])
-                    for seg in row
-                ])
-                for row in FLAG_PIXELS[code]
-            ],
+    # Render a fixed-size flag image for known currencies, or fall back to the
+    # 3-letter code for unknown ones. The flag images are 40x30 (2:3 ratio);
+    # render at 16x15 to fill the 16px header while preserving the full design
+    # (taegeuk + trigrams for KRW) from the source asset.
+    if code in FLAG_ASSETS:
+        return render.Image(
+            src = FLAG_ASSETS[code].readall(),
+            width = 16,
+            height = 15,
         )
     return render.Text(code, color = "#ffffff", font = "tom-thumb")
 
