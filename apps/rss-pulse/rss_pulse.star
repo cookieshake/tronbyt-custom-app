@@ -4,8 +4,8 @@ load("render.star", "render")
 load("schema.star", "schema")
 load("xpath.star", "xpath")
 
-# Cache the feed for 15 minutes to avoid hammering the server.
-CACHE_TTL_SECONDS = 900
+# Cache the feed for 10 minutes (matches the recommended render interval).
+CACHE_TTL_SECONDS = 600
 
 # Default example feed requested by the user.
 DEFAULT_FEED_URL = "https://feeds.bbci.co.uk/news/rss.xml"

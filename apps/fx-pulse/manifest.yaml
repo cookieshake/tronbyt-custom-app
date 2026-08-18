@@ -1,0 +1,9 @@
+---
+id: "fx-pulse"
+name: "FX Pulse"
+summary: Displays a live currency rate
+desc: Fetches the latest exchange rate from the Frankfurter API and displays it with base and quote currency flags. Base and quote currencies are configurable.
+author: cookieshake
+recommendedInterval: 10
+fileName: fx_pulse.star
+packageName: "fx-pulse"
