@@ -101,28 +101,62 @@ def fetch_articles(feed_url, article_count):
         if title == None or title.strip() == "":
             break
         desc = doc.query("//item[%s]/description" % str(i))
-        content = escape_html(desc) if desc != None else ""
-        articles.append((escape_html(title), content))
+        content = to_plain_text(desc) if desc != None else ""
+        articles.append((to_plain_text(title), content))
 
     if len(articles) == 0:
         return [(FALLBACK_TEXT, "")]
 
     return articles
 
-def escape_html(text):
+def to_plain_text(text):
+    # Convert a description/title into displayable plain text.
+    #
     # The XML parser already decodes the outer XML entities, so a Google News
-    # description arrives here as literal HTML markup (e.g. "<ol><li><a ...>").
-    # render.Text does not interpret HTML, but to be safe we escape the markup
-    # characters so they are displayed as plain text rather than being mistaken
-    # for markup. Escape "&" first so we don't double-escape existing entities.
-    text = text.replace("&", "&amp;")
-    text = text.replace("<", "&lt;")
-    text = text.replace(">", "&gt;")
-    text = text.replace("\"", "&quot;")
-    text = text.replace("'", "&#39;")
+    # description arrives here as literal HTML markup (e.g. "<ol><li><a ...>")
+    # with HTML entities like &nbsp; still present. render.Text does not
+    # interpret HTML, so we must NOT re-escape the final string; instead we
+    # decode remaining entities and strip the markup so only readable text is
+    # passed to render.Text.
+    if text == None:
+        return ""
+    text = decode_entities(text)
+
+    # Turn block/list/line-break closing tags into a space so adjacent items
+    # don't run together, then remove all remaining tags and attributes.
+    text = re.sub(r"</(li|ol|ul|p|div|tr|h[1-6]|br)>", " ", text)
+    text = re.sub(r"<[^>]*>", "", text)
 
     # Collapse runs of whitespace (incl. newlines from markup) into single spaces.
     return re.sub(r"\s+", " ", text).strip()
+
+def decode_entities(text):
+    # Decode common HTML/XML entities. The XML parser already decoded the outer
+    # XML entities, so these are the HTML entities that remain inside CDATA or
+    # escaped HTML fragments. Decoding is idempotent for already-decoded text.
+    text = text.replace("&nbsp;", " ")
+    text = text.replace("&amp;", "&")
+    text = text.replace("&lt;", "<")
+    text = text.replace("&gt;", ">")
+    text = text.replace("&quot;", "\"")
+    text = text.replace("&#39;", "'")
+    text = text.replace("&apos;", "'")
+    text = text.replace("&hellip;", "\u2026")
+    text = text.replace("&mdash;", "\u2014")
+    text = decode_numeric_entities(text)
+    return text
+
+def decode_numeric_entities(text):
+    # Decode decimal (&#65;) and hex (&#x42;) numeric entities. re.sub does not
+    # support function replacers in this pixlet build, so find each entity and
+    # replace it manually. re.findall returns the full match (e.g. "&#65;").
+    for ent in re.findall(r"&#\d+;", text):
+        code = int(ent[2:-1])
+        text = text.replace(ent, chr(code))
+    for ent in re.findall(r"&#x[0-9a-fA-F]+;", text):
+        code = int(ent[3:-1], 16)
+        text = text.replace(ent, chr(code))
+    return text
 
 def get_schema():
     fonts = [
