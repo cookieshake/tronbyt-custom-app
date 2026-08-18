@@ -20,10 +20,9 @@ DEFAULT_WIND_UNIT = "ms"
 # Fallback text shown when the API fails or the data is missing/malformed.
 FALLBACK_TEXT = "Weather unavailable"
 
-# Fonts used by the existing fx-pulse app. Only these names are referenced;
-# the full font list is never enumerated.
+# Font used by the existing fx-pulse app. Only this name is referenced; the
+# full font list is never enumerated.
 FONT_SMALL = "tom-thumb"
-FONT_LARGE = "6x10"
 
 # 3-column layout. Each column is 20px wide. The outer Row is centered with
 # explicit 1px spacers on the left/right edges and 1px spacers between columns:
@@ -38,127 +37,28 @@ GAP_SPACER = 1
 # Hangul glyphs, so short English labels are used instead of Korean.
 DAY_LABELS = ["TODAY", "TMRW", "2DAY"]
 
-# High-contrast palette inspired by the Tidbyt NWS live forecast app: a dark
-# navy background with bright yellow/orange for sun/lightning, white/gray for
-# clouds, and blue/cyan for rain/snow.
+# Dark navy background and high-contrast text colors.
 BG = "#0a0e1a"
-SUN = "#ffd700"
-SUN_RAY = "#ffb300"
-CLOUD = "#d8dee9"
-CLOUD_DARK = "#8a94a6"
-RAIN = "#4fc3f7"
-SNOW = "#ffffff"
-LIGHTNING = "#ffd700"
-FOG = "#9aa4b2"
 TEXT = "#ffffff"
 TEXT_DIM = "#9aa4b2"
-TEMP_HOT = "#ffb300"
 
-# Pixel-art weather icons, each a 12x12 grid. Every row is a list of
-# (width, color) segments summing to 12; a color of None is transparent.
-# Icons are assembled from render.Box/Row/Column primitives (no image files,
-# no emoji, no unicode symbols). 12x12 keeps the today column (day label +
-# 6x10 current temp + low/high + icon) within the 32px height.
-ICONS = {
-    "sun": [
-        [(5, None), (2, SUN_RAY), (5, None)],
-        [(5, None), (2, SUN_RAY), (5, None)],
-        [(2, None), (2, SUN_RAY), (4, SUN), (2, SUN_RAY), (2, None)],
-        [(1, None), (2, SUN_RAY), (6, SUN), (2, SUN_RAY), (1, None)],
-        [(1, SUN_RAY), (4, None), (6, SUN), (1, None)],
-        [(1, SUN_RAY), (4, None), (6, SUN), (1, None)],
-        [(2, SUN_RAY), (8, SUN), (2, SUN_RAY)],
-        [(2, SUN_RAY), (8, SUN), (2, SUN_RAY)],
-        [(1, SUN_RAY), (4, None), (6, SUN), (1, None)],
-        [(1, None), (2, SUN_RAY), (6, SUN), (2, SUN_RAY), (1, None)],
-        [(2, None), (2, SUN_RAY), (4, SUN), (2, SUN_RAY), (2, None)],
-        [(5, None), (2, SUN_RAY), (5, None)],
-    ],
-    "partly": [
-        [(3, None), (4, SUN), (5, None)],
-        [(3, None), (4, SUN), (5, None)],
-        [(2, None), (6, SUN), (4, None)],
-        [(1, None), (8, SUN), (3, None)],
-        [(1, None), (8, SUN), (3, None)],
-        [(2, None), (6, SUN), (4, None)],
-        [(12, None)],
-        [(4, None), (4, CLOUD), (4, None)],
-        [(3, None), (6, CLOUD), (3, None)],
-        [(2, None), (8, CLOUD), (2, None)],
-        [(1, None), (10, CLOUD), (1, None)],
-        [(12, CLOUD)],
-    ],
-    "cloud": [
-        [(12, None)],
-        [(12, None)],
-        [(4, None), (4, CLOUD), (4, None)],
-        [(3, None), (6, CLOUD), (3, None)],
-        [(2, None), (8, CLOUD), (2, None)],
-        [(1, None), (10, CLOUD), (1, None)],
-        [(12, CLOUD)],
-        [(12, CLOUD)],
-        [(12, CLOUD)],
-        [(12, None)],
-        [(12, None)],
-        [(12, None)],
-    ],
-    "rain": [
-        [(12, None)],
-        [(4, None), (4, CLOUD), (4, None)],
-        [(3, None), (6, CLOUD), (3, None)],
-        [(2, None), (8, CLOUD), (2, None)],
-        [(1, None), (10, CLOUD), (1, None)],
-        [(12, CLOUD)],
-        [(12, CLOUD)],
-        [(12, None)],
-        [(2, None), (2, RAIN), (2, None), (2, RAIN), (2, None), (2, RAIN)],
-        [(2, None), (2, RAIN), (2, None), (2, RAIN), (2, None), (2, RAIN)],
-        [(2, None), (2, RAIN), (2, None), (2, RAIN), (2, None), (2, RAIN)],
-        [(12, None)],
-    ],
-    "snow": [
-        [(12, None)],
-        [(4, None), (4, CLOUD), (4, None)],
-        [(3, None), (6, CLOUD), (3, None)],
-        [(2, None), (8, CLOUD), (2, None)],
-        [(1, None), (10, CLOUD), (1, None)],
-        [(12, CLOUD)],
-        [(12, CLOUD)],
-        [(12, None)],
-        [(2, None), (2, SNOW), (2, None), (2, SNOW), (2, None), (2, SNOW)],
-        [(2, None), (2, SNOW), (2, None), (2, SNOW), (2, None), (2, SNOW)],
-        [(2, None), (2, SNOW), (2, None), (2, SNOW), (2, None), (2, SNOW)],
-        [(12, None)],
-    ],
-    "thunder": [
-        [(12, None)],
-        [(4, None), (4, CLOUD), (4, None)],
-        [(3, None), (6, CLOUD), (3, None)],
-        [(2, None), (8, CLOUD), (2, None)],
-        [(1, None), (10, CLOUD), (1, None)],
-        [(12, CLOUD)],
-        [(12, CLOUD)],
-        [(12, None)],
-        [(5, None), (2, LIGHTNING), (5, None)],
-        [(4, None), (3, LIGHTNING), (5, None)],
-        [(3, None), (4, LIGHTNING), (5, None)],
-        [(2, None), (5, LIGHTNING), (5, None)],
-    ],
-    "fog": [
-        [(12, None)],
-        [(12, None)],
-        [(12, None)],
-        [(2, None), (8, FOG), (2, None)],
-        [(12, None)],
-        [(2, None), (8, FOG), (2, None)],
-        [(12, None)],
-        [(2, None), (8, FOG), (2, None)],
-        [(12, None)],
-        [(2, None), (8, FOG), (2, None)],
-        [(12, None)],
-        [(12, None)],
-    ],
+# Weather emoji per WMO state. Rendered with render.Emoji (the same built-in
+# widget the fx-pulse app uses for flags), so no external assets are needed.
+# Codes not listed here fall back to a cloud emoji.
+WEATHER_EMOJI = {
+    "sun": "☀️",
+    "partly": "🌤️",
+    "cloud": "☁️",
+    "fog": "🌫️",
+    "rain": "🌧️",
+    "snow": "❄️",
+    "thunder": "⛈️",
 }
+
+# Emoji render height. The emoji sprite is rendered at its native size scaled
+# to this height; 14px keeps it large and readable while leaving room for the
+# day label and low/high temp in each 32px-tall column.
+EMOJI_HEIGHT = 14
 
 def main(config):
     city = config.get("city", DEFAULT_CITY).strip()
@@ -203,11 +103,6 @@ def layout(data):
     if today_code == None and codes != None and len(codes) > 0:
         today_code = codes[0]
 
-    # Today's current temperature, shown prominently in the first column.
-    current_temp = None
-    if current != None:
-        current_temp = current.get("temperature_2m")
-
     cells = []
     for i in range(0, 3):
         if codes == None or i >= len(codes):
@@ -217,11 +112,8 @@ def layout(data):
             code = today_code
         hi = highs[i] if highs != None and i < len(highs) else None
         lo = lows[i] if lows != None and i < len(lows) else None
-        icon = icon_widget(ICONS[icon_key(code)])
-        if i == 0:
-            cells.append(today_cell(DAY_LABELS[i], format_temp(current_temp), format_temp(lo), format_temp(hi), icon))
-        else:
-            cells.append(day_cell(DAY_LABELS[i], format_temp(lo), format_temp(hi), icon))
+        cells.append(column_cell(DAY_LABELS[i], format_temp(lo), format_temp(hi), emoji_widget(icon_key(code))))
+
     if len(cells) == 0:
         return fallback()
 
@@ -241,10 +133,10 @@ def layout(data):
         children = children,
     )
 
-def today_cell(day, current_temp, lo, hi, icon):
-    # Today's column: day label, prominent current temp (6x10), low/high, icon.
-    # The icon stays at the bottom (space_between) so it aligns with the other
-    # columns' icons.
+def column_cell(day, lo, hi, emoji):
+    # One 20px-wide column: day label on top, low/high temp in the middle,
+    # weather emoji at the bottom. The degree symbol is omitted because
+    # "12/25°" (23px) does not fit a 20px column; "12/25" (19px) does.
     return render.Box(
         width = COL_WIDTH,
         height = 32,
@@ -254,29 +146,8 @@ def today_cell(day, current_temp, lo, hi, icon):
             cross_align = "center",
             children = [
                 render.Text(day, color = TEXT, font = FONT_SMALL),
-                render.Text(current_temp, color = TEMP_HOT, font = FONT_LARGE),
-                render.Text("%s/%s" % (lo, hi), color = TEXT_DIM, font = FONT_SMALL),
-                icon,
-            ],
-        ),
-    )
-
-def day_cell(day, lo, hi, icon):
-    # Non-today columns: day label, a blank spacer (matching the today column's
-    # 6x10 current-temp slot), low/high, then the icon. Using the same 4-row
-    # structure as today_cell keeps all three icons bottom-aligned.
-    return render.Box(
-        width = COL_WIDTH,
-        height = 32,
-        color = BG,
-        child = render.Column(
-            main_align = "space_between",
-            cross_align = "center",
-            children = [
-                render.Text(day, color = TEXT, font = FONT_SMALL),
-                render.Box(width = 1, height = 10),
                 render.Text("%s/%s" % (lo, hi), color = TEXT, font = FONT_SMALL),
-                icon,
+                emoji,
             ],
         ),
     )
@@ -285,26 +156,12 @@ def spacer(width):
     # A transparent spacer Box to add explicit horizontal breathing room.
     return render.Box(width = width, height = 1)
 
-def icon_widget(rows):
-    # Assemble a 14x14 pixel-art icon from Box/Row/Column primitives. Each row
-    # is a list of (width, color) segments; None color means transparent.
-    return render.Column(
-        children = [
-            render.Row(children = [
-                seg_box(seg)
-                for seg in row
-            ])
-            for row in rows
-        ],
-    )
-
-def seg_box(seg):
-    if seg[1] == None:
-        return render.Box(width = seg[0], height = 1)
-    return render.Box(width = seg[0], height = 1, color = seg[1])
+def emoji_widget(key):
+    # Render the weather emoji at a fixed height, centered in the column.
+    return render.Emoji(emoji = WEATHER_EMOJI[key], height = EMOJI_HEIGHT)
 
 def icon_key(code):
-    # Map a WMO weather code to one of the pixel-art icon names.
+    # Map a WMO weather code to one of the emoji keys.
     if code == None:
         return "cloud"
     c = int(code)
