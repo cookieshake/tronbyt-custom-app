@@ -20,9 +20,10 @@ DEFAULT_WIND_UNIT = "ms"
 # Fallback text shown when the API fails or the data is missing/malformed.
 FALLBACK_TEXT = "Weather unavailable"
 
-# Font used by the existing fx-pulse app. Only this name is referenced; the
-# full font list is never enumerated.
+# Fonts used by the existing fx-pulse app. Only these names are referenced;
+# the full font list is never enumerated.
 FONT_SMALL = "tom-thumb"
+FONT_LARGE = "6x10"
 
 # 3-column layout. Each column is 20px wide. The outer Row is centered with
 # explicit 1px spacers on the left/right edges and 1px spacers between columns:
@@ -37,32 +38,41 @@ GAP_SPACER = 1
 # Hangul glyphs, so short English labels are used instead of Korean.
 DAY_LABELS = ["TODAY", "TMRW", "2DAY"]
 
-# Icon palette.
+# High-contrast palette inspired by the Tidbyt NWS live forecast app: a dark
+# navy background with bright yellow/orange for sun/lightning, white/gray for
+# clouds, and blue/cyan for rain/snow.
+BG = "#0a0e1a"
 SUN = "#ffd700"
-CLOUD = "#cccccc"
-RAIN = "#4a90d9"
+SUN_RAY = "#ffb300"
+CLOUD = "#d8dee9"
+CLOUD_DARK = "#8a94a6"
+RAIN = "#4fc3f7"
 SNOW = "#ffffff"
 LIGHTNING = "#ffd700"
-FOG = "#888888"
+FOG = "#9aa4b2"
+TEXT = "#ffffff"
+TEXT_DIM = "#9aa4b2"
+TEMP_HOT = "#ffb300"
 
 # Pixel-art weather icons, each a 12x12 grid. Every row is a list of
 # (width, color) segments summing to 12; a color of None is transparent.
 # Icons are assembled from render.Box/Row/Column primitives (no image files,
-# no emoji, no unicode symbols).
+# no emoji, no unicode symbols). 12x12 keeps the today column (day label +
+# 6x10 current temp + low/high + icon) within the 32px height.
 ICONS = {
     "sun": [
-        [(4, None), (1, SUN), (7, None)],
-        [(4, None), (1, SUN), (7, None)],
-        [(4, None), (1, SUN), (7, None)],
-        [(2, None), (6, SUN), (4, None)],
-        [(1, None), (8, SUN), (3, None)],
-        [(10, SUN), (2, None)],
-        [(10, SUN), (2, None)],
-        [(1, None), (8, SUN), (3, None)],
-        [(2, None), (6, SUN), (4, None)],
-        [(4, None), (1, SUN), (7, None)],
-        [(4, None), (1, SUN), (7, None)],
-        [(4, None), (1, SUN), (7, None)],
+        [(5, None), (2, SUN_RAY), (5, None)],
+        [(5, None), (2, SUN_RAY), (5, None)],
+        [(2, None), (2, SUN_RAY), (4, SUN), (2, SUN_RAY), (2, None)],
+        [(1, None), (2, SUN_RAY), (6, SUN), (2, SUN_RAY), (1, None)],
+        [(1, SUN_RAY), (4, None), (6, SUN), (1, None)],
+        [(1, SUN_RAY), (4, None), (6, SUN), (1, None)],
+        [(2, SUN_RAY), (8, SUN), (2, SUN_RAY)],
+        [(2, SUN_RAY), (8, SUN), (2, SUN_RAY)],
+        [(1, SUN_RAY), (4, None), (6, SUN), (1, None)],
+        [(1, None), (2, SUN_RAY), (6, SUN), (2, SUN_RAY), (1, None)],
+        [(2, None), (2, SUN_RAY), (4, SUN), (2, SUN_RAY), (2, None)],
+        [(5, None), (2, SUN_RAY), (5, None)],
     ],
     "partly": [
         [(3, None), (4, SUN), (5, None)],
@@ -87,7 +97,7 @@ ICONS = {
         [(1, None), (10, CLOUD), (1, None)],
         [(12, CLOUD)],
         [(12, CLOUD)],
-        [(12, None)],
+        [(12, CLOUD)],
         [(12, None)],
         [(12, None)],
         [(12, None)],
@@ -174,8 +184,8 @@ def fallback():
         child = render.Box(
             width = 64,
             height = 32,
-            color = "#000000",
-            child = render.Text(FALLBACK_TEXT, color = "#ffffff", font = FONT_SMALL),
+            color = BG,
+            child = render.Text(FALLBACK_TEXT, color = TEXT, font = FONT_SMALL),
         ),
     )
 
@@ -193,6 +203,11 @@ def layout(data):
     if today_code == None and codes != None and len(codes) > 0:
         today_code = codes[0]
 
+    # Today's current temperature, shown prominently in the first column.
+    current_temp = None
+    if current != None:
+        current_temp = current.get("temperature_2m")
+
     cells = []
     for i in range(0, 3):
         if codes == None or i >= len(codes):
@@ -202,8 +217,11 @@ def layout(data):
             code = today_code
         hi = highs[i] if highs != None and i < len(highs) else None
         lo = lows[i] if lows != None and i < len(lows) else None
-        cells.append(column_cell(DAY_LABELS[i], format_temp(lo), format_temp(hi), icon_widget(ICONS[icon_key(code)])))
-
+        icon = icon_widget(ICONS[icon_key(code)])
+        if i == 0:
+            cells.append(today_cell(DAY_LABELS[i], format_temp(current_temp), format_temp(lo), format_temp(hi), icon))
+        else:
+            cells.append(day_cell(DAY_LABELS[i], format_temp(lo), format_temp(hi), icon))
     if len(cells) == 0:
         return fallback()
 
@@ -223,19 +241,41 @@ def layout(data):
         children = children,
     )
 
-def column_cell(day, lo, hi, icon):
-    # One 20px-wide column: day label on top, low/high temp in the middle,
-    # weather icon at the bottom. The degree symbol is omitted because
-    # "12/25°" (23px) does not fit a 20px column; "12/25" (19px) does.
+def today_cell(day, current_temp, lo, hi, icon):
+    # Today's column: day label, prominent current temp (6x10), low/high, icon.
+    # The icon stays at the bottom (space_between) so it aligns with the other
+    # columns' icons.
     return render.Box(
         width = COL_WIDTH,
         height = 32,
+        color = BG,
         child = render.Column(
             main_align = "space_between",
             cross_align = "center",
             children = [
-                render.Text(day, color = "#ffffff", font = FONT_SMALL),
-                render.Text("%s/%s" % (lo, hi), color = "#ffffff", font = FONT_SMALL),
+                render.Text(day, color = TEXT, font = FONT_SMALL),
+                render.Text(current_temp, color = TEMP_HOT, font = FONT_LARGE),
+                render.Text("%s/%s" % (lo, hi), color = TEXT_DIM, font = FONT_SMALL),
+                icon,
+            ],
+        ),
+    )
+
+def day_cell(day, lo, hi, icon):
+    # Non-today columns: day label, a blank spacer (matching the today column's
+    # 6x10 current-temp slot), low/high, then the icon. Using the same 4-row
+    # structure as today_cell keeps all three icons bottom-aligned.
+    return render.Box(
+        width = COL_WIDTH,
+        height = 32,
+        color = BG,
+        child = render.Column(
+            main_align = "space_between",
+            cross_align = "center",
+            children = [
+                render.Text(day, color = TEXT, font = FONT_SMALL),
+                render.Box(width = 1, height = 10),
+                render.Text("%s/%s" % (lo, hi), color = TEXT, font = FONT_SMALL),
                 icon,
             ],
         ),
@@ -246,7 +286,7 @@ def spacer(width):
     return render.Box(width = width, height = 1)
 
 def icon_widget(rows):
-    # Assemble a 12x12 pixel-art icon from Box/Row/Column primitives. Each row
+    # Assemble a 14x14 pixel-art icon from Box/Row/Column primitives. Each row
     # is a list of (width, color) segments; None color means transparent.
     return render.Column(
         children = [
