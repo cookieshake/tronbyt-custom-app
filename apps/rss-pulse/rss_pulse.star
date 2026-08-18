@@ -74,6 +74,7 @@ def main(config):
                         height = BODY_HEIGHT,
                         scroll_direction = "vertical",
                         offset_start = BODY_HEIGHT,
+                        offset_end = BODY_HEIGHT,
                         child = render.Column(
                             main_align = "space_between",
                             children = render_articles(articles, show_description, title_font, title_color, content_font, content_color),
