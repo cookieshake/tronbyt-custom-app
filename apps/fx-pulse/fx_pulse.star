@@ -33,14 +33,6 @@ FLAG_EMOJI = {
 # while still fitting the 16px header.
 CODE_FONT = "tb-8"
 
-# Flag emoji render heights. The base (left) flag is rendered taller than the
-# quote (right) flag so the two flags appear to match in size, since different
-# flag emojis have different native sprite sizes. render.Emoji scales the emoji
-# to the requested height. From pixel probes: US at h13 = 10x9, KR at h10 =
-# 10x8, so the left flag ends up 1px taller with the same width.
-BASE_FLAG_HEIGHT = 13
-QUOTE_FLAG_HEIGHT = 10
-
 # The screen is split exactly in half: header 16 rows, body 16 rows.
 HEADER_HEIGHT = 16
 BODY_HEIGHT = 16
@@ -70,13 +62,13 @@ def main(config):
                                 main_align = "center",
                                 cross_align = "center",
                                 children = [
-                                    flag_widget(base, BASE_FLAG_HEIGHT),
+                                    flag_widget(base),
                                     spacer(1),
                                     render.Text(base, color = "#ffffff", font = CODE_FONT),
                                     spacer(1),
                                     render.Text("→", color = "#ffffff", font = CODE_FONT),
                                     spacer(1),
-                                    flag_widget(quote, QUOTE_FLAG_HEIGHT),
+                                    flag_widget(quote),
                                     spacer(1),
                                     render.Text(quote, color = "#ffffff", font = CODE_FONT),
                                 ],
@@ -104,12 +96,11 @@ def spacer(width):
     # header background.
     return render.Box(width = width, height = 1)
 
-def flag_widget(code, height):
+def flag_widget(code):
     # Render a flag emoji for known currencies, or fall back to the 3-letter
-    # code for unknown ones. Uses the emoji's natural sprite size/ratio scaled
-    # to the requested height.
+    # code for unknown ones. Uses the emoji's natural sprite size/ratio.
     if code in FLAG_EMOJI:
-        return render.Emoji(emoji = FLAG_EMOJI[code], height = height)
+        return render.Emoji(emoji = FLAG_EMOJI[code], height = 10)
     return render.Text(code, color = "#ffffff", font = CODE_FONT)
 
 def fetch_rate(base, quote):
