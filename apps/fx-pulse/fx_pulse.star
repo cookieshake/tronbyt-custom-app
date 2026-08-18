@@ -111,16 +111,19 @@ def main(config):
                         scroll_direction = "horizontal",
                         offset_start = 0,
                         offset_end = 0,
-                        child = render.Row(
-                            main_align = "center",
-                            cross_align = "center",
-                            children = [
-                                flag_widget(base),
-                                render.Text(base, color = "#ffffff", font = "tom-thumb"),
-                                render.Text("→", color = "#ffffff", font = "tom-thumb"),
-                                flag_widget(quote),
-                                render.Text(quote, color = "#ffffff", font = "tom-thumb"),
-                            ],
+                        child = render.Padding(
+                            pad = (0, 1, 0, 0),
+                            child = render.Row(
+                                main_align = "center",
+                                cross_align = "center",
+                                children = [
+                                    flag_widget(base),
+                                    render.Text(base, color = "#ffffff", font = "tom-thumb"),
+                                    render.Text("→", color = "#ffffff", font = "tom-thumb"),
+                                    flag_widget(quote),
+                                    render.Text(quote, color = "#ffffff", font = "tom-thumb"),
+                                ],
+                            ),
                         ),
                     ),
                 ),
@@ -132,6 +135,7 @@ def main(config):
                         rate,
                         color = "#ffffff",
                         font = "6x10",
+                        offset = 1,
                     ),
                 ),
             ],
