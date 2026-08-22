@@ -42,28 +42,129 @@ BG = "#0a0e1a"
 TEXT = "#ffffff"
 TEXT_DIM = "#9aa4b2"
 
-# Weather emoji per WMO state. Rendered with render.Emoji (the same built-in
-# widget the fx-pulse app uses for flags), so no external assets are needed.
-# Codes not listed here fall back to a cloud emoji.
-WEATHER_EMOJI = {
-    "sun": "☀️",
-    "partly": "🌤️",
-    "cloud": "☁️",
-    "fog": "🌫️",
-    "rain": "🌧️",
-    "snow": "❄️",
-    "thunder": "⛈️",
+# Temperature accent colors: cool blue for the low, warm orange for the high.
+# These visually distinguish the two values while staying readable on the
+# dark navy background.
+TEMP_LOW = "#6fb3ff"
+TEMP_HIGH = "#ff9a4d"
+
+# Icon palette (refined, from the later historical pixel-icon commit). A dark
+# navy background with bright yellow/orange for sun/lightning, white/gray for
+# clouds, and blue/cyan for rain/snow.
+SUN = "#ffd700"
+SUN_RAY = "#ffb300"
+CLOUD = "#d8dee9"
+CLOUD_DARK = "#8a94a6"
+RAIN = "#4fc3f7"
+SNOW = "#ffffff"
+LIGHTNING = "#ffd700"
+FOG = "#9aa4b2"
+
+# Pixel-art weather icons, each a 12x12 grid. Every row is a list of
+# (width, color) segments summing to 12; a color of None is transparent.
+# Icons are assembled from render.Box/Row/Column primitives (no image files,
+# no emoji, no unicode symbols). 12x12 keeps the column (day label + low/high
+# + icon) within the 32px height.
+ICONS = {
+    "sun": [
+        [(5, None), (2, SUN_RAY), (5, None)],
+        [(5, None), (2, SUN_RAY), (5, None)],
+        [(2, None), (2, SUN_RAY), (4, SUN), (2, SUN_RAY), (2, None)],
+        [(1, None), (2, SUN_RAY), (6, SUN), (2, SUN_RAY), (1, None)],
+        [(1, SUN_RAY), (4, None), (6, SUN), (1, None)],
+        [(1, SUN_RAY), (4, None), (6, SUN), (1, None)],
+        [(2, SUN_RAY), (8, SUN), (2, SUN_RAY)],
+        [(2, SUN_RAY), (8, SUN), (2, SUN_RAY)],
+        [(1, SUN_RAY), (4, None), (6, SUN), (1, None)],
+        [(1, None), (2, SUN_RAY), (6, SUN), (2, SUN_RAY), (1, None)],
+        [(2, None), (2, SUN_RAY), (4, SUN), (2, SUN_RAY), (2, None)],
+        [(5, None), (2, SUN_RAY), (5, None)],
+    ],
+    "partly": [
+        [(3, None), (4, SUN), (5, None)],
+        [(3, None), (4, SUN), (5, None)],
+        [(2, None), (6, SUN), (4, None)],
+        [(1, None), (8, SUN), (3, None)],
+        [(1, None), (8, SUN), (3, None)],
+        [(2, None), (6, SUN), (4, None)],
+        [(12, None)],
+        [(4, None), (4, CLOUD), (4, None)],
+        [(3, None), (6, CLOUD), (3, None)],
+        [(2, None), (8, CLOUD), (2, None)],
+        [(1, None), (10, CLOUD), (1, None)],
+        [(12, CLOUD)],
+    ],
+    "cloud": [
+        [(12, None)],
+        [(12, None)],
+        [(4, None), (4, CLOUD), (4, None)],
+        [(3, None), (6, CLOUD), (3, None)],
+        [(2, None), (8, CLOUD), (2, None)],
+        [(1, None), (10, CLOUD), (1, None)],
+        [(12, CLOUD)],
+        [(12, CLOUD)],
+        [(12, CLOUD)],
+        [(12, None)],
+        [(12, None)],
+        [(12, None)],
+    ],
+    "rain": [
+        [(12, None)],
+        [(4, None), (4, CLOUD), (4, None)],
+        [(3, None), (6, CLOUD), (3, None)],
+        [(2, None), (8, CLOUD), (2, None)],
+        [(1, None), (10, CLOUD), (1, None)],
+        [(12, CLOUD)],
+        [(12, CLOUD)],
+        [(12, None)],
+        [(2, None), (2, RAIN), (2, None), (2, RAIN), (2, None), (2, RAIN)],
+        [(2, None), (2, RAIN), (2, None), (2, RAIN), (2, None), (2, RAIN)],
+        [(2, None), (2, RAIN), (2, None), (2, RAIN), (2, None), (2, RAIN)],
+        [(12, None)],
+    ],
+    "snow": [
+        [(12, None)],
+        [(4, None), (4, CLOUD), (4, None)],
+        [(3, None), (6, CLOUD), (3, None)],
+        [(2, None), (8, CLOUD), (2, None)],
+        [(1, None), (10, CLOUD), (1, None)],
+        [(12, CLOUD)],
+        [(12, CLOUD)],
+        [(12, None)],
+        [(2, None), (2, SNOW), (2, None), (2, SNOW), (2, None), (2, SNOW)],
+        [(2, None), (2, SNOW), (2, None), (2, SNOW), (2, None), (2, SNOW)],
+        [(2, None), (2, SNOW), (2, None), (2, SNOW), (2, None), (2, SNOW)],
+        [(12, None)],
+    ],
+    "thunder": [
+        [(12, None)],
+        [(4, None), (4, CLOUD), (4, None)],
+        [(3, None), (6, CLOUD), (3, None)],
+        [(2, None), (8, CLOUD), (2, None)],
+        [(1, None), (10, CLOUD), (1, None)],
+        [(12, CLOUD)],
+        [(12, CLOUD)],
+        [(12, None)],
+        [(5, None), (2, LIGHTNING), (5, None)],
+        [(4, None), (3, LIGHTNING), (5, None)],
+        [(3, None), (4, LIGHTNING), (5, None)],
+        [(2, None), (5, LIGHTNING), (5, None)],
+    ],
+    "fog": [
+        [(12, None)],
+        [(12, None)],
+        [(12, None)],
+        [(2, None), (8, FOG), (2, None)],
+        [(12, None)],
+        [(2, None), (8, FOG), (2, None)],
+        [(12, None)],
+        [(2, None), (8, FOG), (2, None)],
+        [(12, None)],
+        [(2, None), (8, FOG), (2, None)],
+        [(12, None)],
+        [(12, None)],
+    ],
 }
-
-# Emoji render height. The emoji sprite is rendered at its native size scaled
-# to this height; 14px keeps it large and readable.
-EMOJI_HEIGHT = 14
-
-# How many pixels to shift the emoji down within its column slot. The emoji is
-# placed inside a transparent Box that is EMOJI_HEIGHT + EMOJI_OFFSET tall, with
-# a top spacer of EMOJI_OFFSET, so the icon sits 2px lower without clipping at
-# the bottom of the 32px screen or overlapping the low/high temp above it.
-EMOJI_OFFSET = 2
 
 def main(config):
     city = config.get("city", DEFAULT_CITY).strip()
@@ -117,7 +218,7 @@ def layout(data):
             code = today_code
         hi = highs[i] if highs != None and i < len(highs) else None
         lo = lows[i] if lows != None and i < len(lows) else None
-        cells.append(column_cell(DAY_LABELS[i], format_temp(lo), format_temp(hi), emoji_widget(icon_key(code))))
+        cells.append(column_cell(DAY_LABELS[i], format_temp(lo), format_temp(hi), icon_widget(ICONS[icon_key(code)])))
 
     if len(cells) == 0:
         return fallback()
@@ -138,10 +239,14 @@ def layout(data):
         children = children,
     )
 
-def column_cell(day, lo, hi, emoji):
+def column_cell(day, lo, hi, icon):
     # One 20px-wide column: day label on top, low/high temp in the middle,
-    # weather emoji at the bottom. The degree symbol is omitted because
-    # "12/25°" (23px) does not fit a 20px column; "12/25" (19px) does.
+    # weather icon at the bottom. The degree symbol is omitted because
+    # "12/30°" (23px) does not fit a 20px column; "12/30" (20px) does.
+    # The low/high is a compact split Row: low (blue) "/" (dim) high (orange).
+    # With tom-thumb, "12" (8px) + "/" (4px) + "30" (8px) = 20px, so it fills
+    # the column exactly like the previous single "12/30" text and never
+    # overflows the 64px-wide 3-column layout.
     return render.Box(
         width = COL_WIDTH,
         height = 32,
@@ -150,9 +255,17 @@ def column_cell(day, lo, hi, emoji):
             main_align = "space_between",
             cross_align = "center",
             children = [
-                render.Text(day, color = TEXT, font = FONT_SMALL),
-                render.Text("%s/%s" % (lo, hi), color = TEXT, font = FONT_SMALL),
-                emoji,
+                render.Text(day, color = TEXT_DIM, font = FONT_SMALL),
+                render.Row(
+                    main_align = "center",
+                    cross_align = "center",
+                    children = [
+                        render.Text(lo, color = TEMP_LOW, font = FONT_SMALL),
+                        render.Text("/", color = TEXT_DIM, font = FONT_SMALL),
+                        render.Text(hi, color = TEMP_HIGH, font = FONT_SMALL),
+                    ],
+                ),
+                icon,
             ],
         ),
     )
@@ -161,26 +274,26 @@ def spacer(width):
     # A transparent spacer Box to add explicit horizontal breathing room.
     return render.Box(width = width, height = 1)
 
-def emoji_widget(key):
-    # Render the weather emoji at a fixed height, centered in the column, and
-    # shifted down by EMOJI_OFFSET via a transparent top spacer inside a fixed
-    # slot. The slot is EMOJI_HEIGHT + EMOJI_OFFSET tall so the icon is not
-    # clipped at the bottom of the 32px screen.
-    return render.Box(
-        width = COL_WIDTH,
-        height = EMOJI_HEIGHT + EMOJI_OFFSET,
-        child = render.Column(
-            main_align = "start",
-            cross_align = "center",
-            children = [
-                render.Box(width = 1, height = EMOJI_OFFSET),
-                render.Emoji(emoji = WEATHER_EMOJI[key], height = EMOJI_HEIGHT),
-            ],
-        ),
+def icon_widget(rows):
+    # Assemble a 12x12 pixel-art icon from Box/Row/Column primitives. Each row
+    # is a list of (width, color) segments; None color means transparent.
+    return render.Column(
+        children = [
+            render.Row(children = [
+                seg_box(seg)
+                for seg in row
+            ])
+            for row in rows
+        ],
     )
 
+def seg_box(seg):
+    if seg[1] == None:
+        return render.Box(width = seg[0], height = 1)
+    return render.Box(width = seg[0], height = 1, color = seg[1])
+
 def icon_key(code):
-    # Map a WMO weather code to one of the emoji keys.
+    # Map a WMO weather code to one of the pixel-art icon names.
     if code == None:
         return "cloud"
     c = int(code)
