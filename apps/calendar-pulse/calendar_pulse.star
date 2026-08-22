@@ -24,6 +24,9 @@ DEFAULT_BG_COLOR = "#000000"
 # Default number of upcoming events to display.
 DEFAULT_EVENT_COUNT = "3"
 
+# Default header label shown at the top of the app.
+DEFAULT_HEADER_TEXT = "UPCOMING"
+
 # Default display timezone. iCal feeds may carry UTC (trailing Z), a TZID, or
 # floating (no zone) values. We interpret them in this zone for display and
 # filtering. Asia/Seoul is the author's locale; users can change it in config.
@@ -67,9 +70,9 @@ KNOWN_ZONES = [
 # RRULEs (e.g. a DAILY rule with no COUNT/UNTIL).
 MAX_OCCURRENCES = 200
 
-# Header occupies the top 9 rows; the body scrolls in the remaining 23.
-HEADER_HEIGHT = 9
-BODY_HEIGHT = 23
+# Header occupies the top 7 rows; the body scrolls in the remaining 25.
+HEADER_HEIGHT = 7
+BODY_HEIGHT = 25
 
 def main(config):
     calendar_url = config.get("calendar_url", DEFAULT_CALENDAR_URL)
@@ -79,6 +82,7 @@ def main(config):
     bg_color = config.get("bg_color", DEFAULT_BG_COLOR)
     event_count = int(config.get("event_count", DEFAULT_EVENT_COUNT))
     tz = config.get("timezone", DEFAULT_TZ)
+    header_text = config.get("header_text", DEFAULT_HEADER_TEXT)
 
     events = fetch_events(calendar_url, event_count, tz)
 
@@ -91,11 +95,11 @@ def main(config):
                     width = 64,
                     height = HEADER_HEIGHT,
                     color = bg_color,
-                    # Render the fixed English "UPCOMING" header with the small
+                    # Render the configurable header label with the fixed small
                     # DEFAULT_FONT rather than the user-selected body font. Font
                     # metrics are unavailable at runtime, so this prevents
                     # clipping when a Korean-capable/tall font is selected.
-                    child = render.Text("UPCOMING", color = text_color, font = DEFAULT_FONT),
+                    child = render.Text(header_text, color = text_color, font = DEFAULT_FONT),
                 ),
                 render.Box(
                     width = 64,
@@ -464,6 +468,13 @@ def get_schema():
     return schema.Schema(
         version = "1",
         fields = [
+            schema.Text(
+                id = "header_text",
+                name = "Header Text",
+                desc = "The label shown at the top of the app.",
+                icon = "heading",
+                default = DEFAULT_HEADER_TEXT,
+            ),
             schema.Text(
                 id = "calendar_url",
                 name = "Calendar iCal URL",
