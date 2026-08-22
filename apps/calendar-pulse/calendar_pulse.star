@@ -67,9 +67,9 @@ KNOWN_ZONES = [
 # RRULEs (e.g. a DAILY rule with no COUNT/UNTIL).
 MAX_OCCURRENCES = 200
 
-# Header occupies the top 8 rows; the body scrolls in the remaining 24.
-HEADER_HEIGHT = 8
-BODY_HEIGHT = 24
+# Header occupies the top 9 rows; the body scrolls in the remaining 23.
+HEADER_HEIGHT = 9
+BODY_HEIGHT = 23
 
 def main(config):
     calendar_url = config.get("calendar_url", DEFAULT_CALENDAR_URL)
@@ -91,7 +91,11 @@ def main(config):
                     width = 64,
                     height = HEADER_HEIGHT,
                     color = bg_color,
-                    child = render.Text("UPCOMING", color = text_color, font = font),
+                    # Render the fixed English "UPCOMING" header with the small
+                    # DEFAULT_FONT rather than the user-selected body font. Font
+                    # metrics are unavailable at runtime, so this prevents
+                    # clipping when a Korean-capable/tall font is selected.
+                    child = render.Text("UPCOMING", color = text_color, font = DEFAULT_FONT),
                 ),
                 render.Box(
                     width = 64,
