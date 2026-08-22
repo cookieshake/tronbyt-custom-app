@@ -1,0 +1,9 @@
+---
+id: "calendar-pulse"
+name: "Calendar Pulse"
+summary: Displays upcoming Google Calendar events
+desc: "Fetches a Google Calendar public or secret iCal URL over HTTP and vertically scrolls the titles and start times of upcoming events. Font, colors, and display timezone are configurable. All-day events stay visible through their end day; timed events are shown once upcoming. Recurring events support DAILY/WEEKLY with INTERVAL/COUNT/UNTIL; other recurrence rules fall back to showing the series start. Timezone handling: UTC and TZID values are converted to the configured timezone; unknown TZIDs fall back to the configured default."
+author: cookieshake
+recommendedInterval: 10
+fileName: calendar_pulse.star
+packageName: "calendar-pulse"
