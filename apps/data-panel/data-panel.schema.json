@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Data Panel version 1 payload",
+  "type": "object",
+  "required": ["version", "lines"],
+  "properties": {
+    "version": {"const": 1},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "lines": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "oneOf": [
+          {"type": "string", "maxLength": 48},
+          {
+            "type": "object",
+            "required": ["text"],
+            "properties": {"text": {"type": "string", "maxLength": 48}},
+            "not": {"required": ["segments"]}
+          },
+          {
+            "type": "object",
+            "required": ["segments"],
+            "properties": {
+              "segments": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 8,
+                "items": {
+                  "type": "object",
+                  "required": ["text"],
+                  "properties": {
+                    "text": {"type": "string"},
+                    "color": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$"}
+                  }
+                }
+              }
+            },
+            "not": {"required": ["text"]}
+          }
+        ]
+      }
+    }
+  }
+}

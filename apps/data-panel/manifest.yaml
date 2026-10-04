@@ -1,0 +1,9 @@
+---
+id: "data-panel"
+name: "Data Panel"
+summary: Displays formatted JSON rows
+desc: Renders plain or independently colored text segments with row alignment and optional horizontal scrolling.
+author: cookieshake
+recommendedInterval: 60
+fileName: data_panel.star
+packageName: "data-panel"
