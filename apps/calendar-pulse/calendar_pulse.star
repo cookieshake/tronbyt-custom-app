@@ -149,12 +149,17 @@ def fetch_events(calendar_url, event_count, tz):
     if body == None or body.strip() == "":
         return [(FALLBACK_TEXT, "")]
 
+    now = time.now()
+    return fetch_events_from_ical(body, event_count, tz, now)
+
+def fetch_events_from_ical(body, event_count, tz, now):
     events = parse_ical(body)
     if len(events) == 0:
         return [(FALLBACK_TEXT, "")]
 
-    now = time.now()
-    today = (now.year, now.month, now.day)
+    display_tz = safe_location(tz, DEFAULT_TZ)
+    today_time = now.in_location(display_tz)
+    today = (today_time.year, today_time.month, today_time.day)
 
     # Expand each event to its next upcoming occurrence (recurring events are
     # expanded from their series DTSTART, so a past DTSTART does not hide future
@@ -174,7 +179,10 @@ def fetch_events(calendar_url, event_count, tz):
     # Build display tuples: (summary, when-string).
     out = []
     for t, all_day, summary in upcoming:
-        out.append((summary, format_when(t, all_day)))
+        # All-day DTSTART values are civil dates. Keep their source date rather
+        # than converting the UTC-midnight surrogate into another calendar day.
+        display_time = t if all_day else t.in_location(display_tz)
+        out.append((summary, format_when(display_time, all_day)))
     return out
 
 def parse_ical(body):
@@ -380,7 +388,9 @@ def to_time(ts, tz, default_tz):
 def safe_location(tz, default_tz):
     if tz in KNOWN_ZONES:
         return tz
-    return default_tz
+    if default_tz in KNOWN_ZONES:
+        return default_tz
+    return DEFAULT_TZ
 
 def format_when(t, all_day):
     # Format a time value (already in the display timezone) as a short readable
