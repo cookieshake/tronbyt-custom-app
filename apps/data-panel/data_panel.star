@@ -26,7 +26,9 @@ def main(config):
     children = []
     total_height = 0
     for row in rows:
-        child, height = render_row(row, align, overflow, font)
+        child, height, too_wide = render_row(row, align, overflow, font)
+        if too_wide:
+            return render.Root(child = render_error("ROW TOO WIDE"))
         total_height += height
         children.append(child)
     if total_height > 32:
@@ -73,15 +75,47 @@ def validate_line(line, default_color):
     if type(line) == "string":
         if len(line) > MAX_TEXT or not valid_text(line):
             return None
-        return [segment(line, default_color)]
+        return {"parts": [segment(line, default_color)], "split": False}
     if type(line) != "dict":
         return None
     if "text" in line:
-        if "segments" in line or type(line["text"]) != "string" or len(line["text"]) > MAX_TEXT or not valid_text(line["text"]):
+        if "segments" in line or "left" in line or "right" in line or type(line["text"]) != "string" or len(line["text"]) > MAX_TEXT or not valid_text(line["text"]):
             return None
-        return [segment(line["text"], default_color)]
+        return {"parts": [segment(line["text"], default_color)], "split": False}
+    has_parts = "segments" in line
+    has_split = "left" in line or "right" in line
+    if has_parts == has_split:
+        return None
+    if has_split:
+        for key in line:
+            if key not in ["left", "right"]:
+                return None
+        if type(line.get("left", [])) != "list" or type(line.get("right", [])) != "list":
+            return None
+        groups = []
+        for group in [line.get("left", []), line.get("right", [])]:
+            if len(group) > MAX_SEGMENTS:
+                return None
+            parsed, total = [], 0
+            for part in group:
+                if type(part) != "dict":
+                    return None
+                for key in part:
+                    if key not in ["text", "color"]:
+                        return None
+                if type(part.get("text")) != "string" or not valid_text(part["text"]):
+                    return None
+                total += len(part["text"])
+                color = part.get("color", default_color)
+                if total > MAX_TEXT or not valid_color(color):
+                    return None
+                parsed.append(segment(part["text"], color))
+            groups.append(parsed)
+        if len(groups[0]) + len(groups[1]) == 0:
+            return None
+        return {"left": groups[0], "right": groups[1], "split": True}
     parts = line.get("segments")
-    if type(parts) != "list" or len(parts) < 1 or len(parts) > MAX_SEGMENTS:
+    if "text" in line or type(parts) != "list" or len(parts) < 1 or len(parts) > MAX_SEGMENTS:
         return None
     result = []
     total = 0
@@ -98,7 +132,7 @@ def validate_line(line, default_color):
         if not valid_color(part_color):
             return None
         result.append(segment(text, part_color))
-    return result
+    return {"parts": result, "split": False}
 
 def segment(text, color):
     return {"text": text, "color": color}
@@ -106,7 +140,27 @@ def segment(text, color):
 def simple_row(text, color):
     return [segment(text, color)]
 
-def render_row(parts, align, overflow, font):
+def render_row(row, align, overflow, font):
+    if row["split"]:
+        left, right = row["left"], row["right"]
+        left_width, left_height = measure_group(left, font)
+        right_width, right_height = measure_group(right, font)
+        height = max(10, left_height, right_height)
+        if not left_width and not right_width:
+            return (None, height, True)
+        if left_width + right_width + (1 if left_width and right_width else 0) > 64:
+            return (None, height, True)
+        children = []
+        if left_width:
+            children.append(render.Box(width = left_width, child = render.Row(children = [render.Text(p["text"], color = p["color"], font = font) for p in left])))
+        if right_width:
+            children.append(render.Box(width = right_width, child = render.Row(children = [render.Text(p["text"], color = p["color"], font = font) for p in right])))
+
+        # Box centers its child; the expanded row must distribute the two
+        # measured groups across the full 64px width instead of using padding.
+        placement = "space_between" if left_width and right_width else ("end" if right_width else "start")
+        return (render.Box(width = 64, height = height, child = render.Row(main_align = placement, expanded = True, children = children)), height, False)
+    parts = row["parts"]
     widgets = []
     height = 10
     for part in parts:
@@ -116,7 +170,15 @@ def render_row(parts, align, overflow, font):
     content = render.Row(children = widgets, main_align = {"left": "start", "center": "center", "right": "end"}.get(align, "start"), expanded = overflow != "scroll")
     if overflow == "scroll":
         content = render.Marquee(width = 64, scroll_direction = "horizontal", offset_start = 0, offset_end = 0, align = {"left": "start", "center": "center", "right": "end"}.get(align, "start"), child = content)
-    return (render.Box(width = 64, height = height, child = content), height)
+    return (render.Box(width = 64, height = height, child = content), height, False)
+
+def measure_group(parts, font):
+    width, height = 0, 10
+    for part in parts:
+        size = render.Text(part["text"], color = part["color"], font = font).size()
+        width += size[0]
+        height = max(height, size[1])
+    return (width, height)
 
 def resolve_font(value):
     if not value or value == FONT_DEFAULT:

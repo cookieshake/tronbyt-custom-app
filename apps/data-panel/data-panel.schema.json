@@ -17,7 +17,7 @@
             "type": "object",
             "required": ["text"],
             "properties": {"text": {"type": "string", "maxLength": 48}},
-            "not": {"required": ["segments"]}
+            "not": {"anyOf": [{"required": ["segments"]}, {"required": ["left"]}, {"required": ["right"]}]}
           },
           {
             "type": "object",
@@ -37,9 +37,34 @@
                 }
               }
             },
-            "not": {"required": ["text"]}
+            "not": {"anyOf": [{"required": ["text"]}, {"required": ["left"]}, {"required": ["right"]}]}
+          },
+          {
+            "type": "object",
+            "properties": {
+              "left": {"$ref": "#/$defs/group"},
+              "right": {"$ref": "#/$defs/group"}
+            },
+            "anyOf": [{"required": ["left"]}, {"required": ["right"]}],
+            "not": {"properties": {"left": {"maxItems": 0}, "right": {"maxItems": 0}}},
+            "additionalProperties": false
           }
         ]
+      }
+    }
+  },
+  "$defs": {
+    "group": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": {"type": "string", "maxLength": 48},
+          "color": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$"}
+        },
+        "additionalProperties": false
       }
     }
   }
